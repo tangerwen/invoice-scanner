@@ -5,6 +5,597 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<title>發票掃描</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0d0d0f;--surface:#17171a;--surface2:#1f1f24;--border:#2a2a32;--accent:#4ade80;--accent2:#22c55e;--text:#f0f0f0;--muted:#6b6b78;--danger:#f87171;--warn:#fbbf24;--info:#60a5fa;--radius:16px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue','PingFang TC',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
+.config-banner{background:#1a1a2e;border-bottom:1px solid #2a2a5a;padding:10px 16px;font-size:12px;color:#8888cc;display:flex;align-items:center;gap:8px;cursor:pointer;}
+.config-banner.ok{background:#0f2a1a;border-color:#1a4a2a;color:var(--accent);}
+.cfg-dot{width:8px;height:8px;border-radius:50%;background:var(--danger);flex-shrink:0;}
+.cfg-dot.ok{background:var(--accent);}
+header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.logo{font-size:18px;font-weight:700;letter-spacing:-0.5px;color:var(--accent);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.count-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;color:var(--muted);}
+.count-badge span{color:var(--accent);font-weight:600;}
+.od-btn-hdr{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;white-space:nowrap;}
+.od-btn-hdr.connected{color:var(--info);border-color:#1e3a5f;background:#0a1a2a;}
+main{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:86px;}
+.camera-zone{background:var(--surface);border:2px dashed var(--border);border-radius:var(--radius);overflow:hidden;position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s;}
+.camera-zone.active{border-color:var(--accent);border-style:solid;}
+#preview{width:100%;height:100%;object-fit:cover;display:none;}
+#preview.visible{display:block;}
+.cam-ph{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);}
+.cam-ph svg{opacity:0.4;}
+.cam-ph p{font-size:14px;}
+#video{width:100%;height:100%;object-fit:cover;display:none;}
+#video.visible{display:block;}
+.scan-line{position:absolute;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanMove 2s ease-in-out infinite;display:none;}
+.scan-line.active{display:block;}
+@keyframes scanMove{0%{top:15%;opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{top:85%;opacity:0;}}
+.corner{position:absolute;width:20px;height:20px;border-color:var(--accent);border-style:solid;display:none;}
+.corner.active{display:block;}
+.corner.tl{top:8px;left:8px;border-width:2px 0 0 2px;}
+.corner.tr{top:8px;right:8px;border-width:2px 2px 0 0;}
+.corner.bl{bottom:8px;left:8px;border-width:0 0 2px 2px;}
+.corner.br{bottom:8px;right:8px;border-width:0 2px 2px 0;}
+.btn-row{display:flex;gap:10px;}
+.btn{flex:1;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--accent);color:#0d1f12;}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-export{background:#1a2a3a;color:var(--info);border:1px solid #1e3a5f;}
+.btn-od{background:#0a1a2a;color:var(--info);border:1px solid #1e3a5f;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.shutter-row{display:none;align-items:center;justify-content:center;gap:20px;}
+.shutter-row.visible{display:flex;}
+.shutter-btn{width:68px;height:68px;border-radius:50%;background:white;border:4px solid var(--accent);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.shutter-btn:active{transform:scale(0.93);background:var(--accent);}
+.flip-btn{width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;}
+#fileInput{display:none;}
+label.btn{cursor:pointer;}
+.status-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:13px;display:none;align-items:center;gap:10px;}
+.status-box.visible{display:flex;}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.status-text{color:var(--muted);flex:1;}
+.list-header{display:flex;align-items:center;justify-content:space-between;padding:0 2px;}
+.list-title{font-size:13px;color:var(--muted);font-weight:500;}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;font-size:12px;}
+.invoice-list{display:flex;flex-direction:column;gap:8px;}
+.invoice-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:start;animation:slideIn 0.25s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.card-num{width:28px;height:28px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);}
+.card-body{display:flex;flex-direction:column;gap:4px;}
+.card-no{font-size:15px;font-weight:600;font-family:'Courier New',monospace;letter-spacing:0.5px;}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;}
+.pill{background:var(--surface2);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--muted);}
+.pill.hi{color:var(--accent);}
+.pill.od{color:var(--info);display:none;}
+.conf{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;}
+.ch{background:#0f2a1a;color:var(--accent);}
+.cm{background:#2a2000;color:var(--warn);}
+.cl{background:#2a1010;color:var(--danger);}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;align-self:center;}
+.del-btn:hover{color:var(--danger);}
+.exp-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:0;display:flex;align-items:center;gap:3px;}
+.exp-btn:hover{color:var(--text);}
+.card-fields{display:none;flex-direction:column;gap:8px;margin-top:6px;}
+.card-fields.open{display:flex;}
+.field-row{display:flex;flex-direction:column;gap:2px;}
+.field-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.field-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;color:var(--text);width:100%;}
+.field-input:focus{outline:none;border-color:var(--accent);}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;border:1px dashed var(--border);border-radius:var(--radius);}
+.export-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--bg);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:flex-end;justify-content:center;z-index:200;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;display:flex;flex-direction:column;gap:14px;}
+.modal-title{font-size:16px;font-weight:600;}
+.modal-label{font-size:12px;color:var(--muted);margin-bottom:4px;}
+.modal-input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);width:100%;font-family:monospace;}
+.modal-input:focus{outline:none;border-color:var(--accent);}
+.modal-note{font-size:11px;color:var(--muted);line-height:1.7;background:var(--surface2);border-radius:8px;padding:10px 12px;}
+.modal-note b{color:var(--warn);}
+.toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;pointer-events:none;transition:opacity 0.3s;white-space:nowrap;z-index:300;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="config-banner" id="cfgBanner" onclick="openSettings()">
+  <div class="cfg-dot" id="cfgDot"></div>
+  <span id="cfgMsg">尚未設定 Azure API 金鑰，點此設定</span>
+</div>
+
+<header>
+  <div class="logo">發票掃描</div>
+  <div class="hdr-right">
+    <div class="count-badge">已掃描 <span id="countDisplay">0</span> 張</div>
+    <button class="od-btn-hdr" id="odHdrBtn" onclick="handleOdLogin()">OneDrive 未連線</button>
+  </div>
+</header>
+
+<main>
+  <div class="camera-zone" id="cameraZone">
+    <video id="video" autoplay playsinline></video>
+    <img id="preview" alt="">
+    <div class="cam-ph" id="placeholder">
+      <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <p>點擊拍照或上傳圖片</p>
+    </div>
+    <div class="scan-line" id="scanLine"></div>
+    <div class="corner tl" id="cTL"></div><div class="corner tr" id="cTR"></div>
+    <div class="corner bl" id="cBL"></div><div class="corner br" id="cBR"></div>
+  </div>
+
+  <div class="shutter-row" id="shutterRow">
+    <button class="flip-btn" id="flipBtn"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+    <button class="shutter-btn" id="shutterBtn"><svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0d1f12" stroke-width="2.5"><circle cx="12" cy="12" r="4" fill="#0d1f12"/></svg></button>
+    <button class="flip-btn" id="stopBtn"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+  </div>
+
+  <div class="btn-row" id="actionRow">
+    <button class="btn btn-primary" id="cameraBtn">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      拍照掃描
+    </button>
+    <label class="btn btn-secondary" for="fileInput">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      選圖上傳
+    </label>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+  </div>
+
+  <div class="status-box" id="statusBox">
+    <div class="spinner"></div>
+    <div class="status-text" id="statusText">辨識中...</div>
+  </div>
+
+  <div class="list-header" id="listHeader" style="display:none">
+    <span class="list-title">掃描結果</span>
+    <button class="icon-btn" id="clearAllBtn">全部清除</button>
+  </div>
+  <div class="invoice-list" id="invoiceList">
+    <div class="empty-state" id="emptyState">
+      <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="opacity:0.3;margin:auto"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p style="margin-top:8px;font-size:13px;">尚未掃描任何發票</p>
+    </div>
+  </div>
+</main>
+
+<div class="export-bar">
+  <button class="btn btn-secondary" id="clearBtn" style="flex:0.5">清除</button>
+  <button class="btn btn-od" id="odUploadBtn" style="flex:1">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+    存至 OneDrive
+  </button>
+  <button class="btn btn-export" id="exportBtn" style="flex:1">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+    匯出 Excel
+  </button>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <div class="modal-title">Azure OCR 設定</div>
+    <div>
+      <div class="modal-label">端點 URL（Endpoint）</div>
+      <input class="modal-input" id="cfgEndpoint" placeholder="https://xxxx.cognitiveservices.azure.com">
+    </div>
+    <div>
+      <div class="modal-label">API 金鑰（請使用重新產生後的新金鑰）</div>
+      <input class="modal-input" id="cfgKey" type="password" placeholder="貼上 Key 1">
+    </div>
+    <div class="modal-note">
+      <b>安全提示：</b>金鑰僅儲存在您的瀏覽器本機，不會上傳至任何伺服器。<br>
+      請勿將金鑰分享或貼在對話訊息中。
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+      <button class="btn btn-primary" onclick="saveSettings()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas id="canvas" style="display:none"></canvas>
+
+<script>
+// ── Constants ─────────────────────────────────────
+const CLIENT_ID   = '7286c214-eb27-4129-a3f3-b58e10234142';
+const REDIRECT    = window.location.origin + window.location.pathname;
+const SCOPES      = 'files.readwrite offline_access';
+
+// ── State ─────────────────────────────────────────
+let azEndpoint = localStorage.getItem('az_ep') || '';
+let azKey      = localStorage.getItem('az_key') || '';
+let odToken    = null;
+let invoices   = [];
+let stream     = null;
+let facing     = 'environment';
+let cardCnt    = 0;
+
+// ── DOM refs ──────────────────────────────────────
+const $ = id => document.getElementById(id);
+const video    = $('video');
+const preview  = $('preview');
+const canvas   = $('canvas');
+
+// ── Boot ──────────────────────────────────────────
+updateCfgBanner();
+handleOAuthReturn();
+
+// ── Settings ──────────────────────────────────────
+function openSettings(){
+  $('cfgEndpoint').value = azEndpoint;
+  $('cfgKey').value = azKey;
+  $('settingsModal').classList.add('open');
+}
+function closeSettings(){ $('settingsModal').classList.remove('open'); }
+function saveSettings(){
+  azEndpoint = $('cfgEndpoint').value.trim().replace(/\/+$/,'');
+  azKey = $('cfgKey').value.trim();
+  localStorage.setItem('az_ep', azEndpoint);
+  localStorage.setItem('az_key', azKey);
+  closeSettings(); updateCfgBanner();
+  toast('設定已儲存');
+}
+function updateCfgBanner(){
+  const ok = azEndpoint && azKey;
+  $('cfgBanner').className = 'config-banner' + (ok?' ok':'');
+  $('cfgDot').className    = 'cfg-dot' + (ok?' ok':'');
+  $('cfgMsg').textContent  = ok ? 'Azure OCR 已設定完成（點此修改）' : '尚未設定 Azure API 金鑰，點此設定';
+}
+
+// ── OneDrive ──────────────────────────────────────
+function handleOdLogin(){
+  if(odToken){ toast('OneDrive 已連線'); return; }
+  location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize`
+    +`?client_id=${CLIENT_ID}&response_type=token`
+    +`&redirect_uri=${encodeURIComponent(REDIRECT)}`
+    +`&scope=${encodeURIComponent(SCOPES)}&response_mode=fragment`;
+}
+function handleOAuthReturn(){
+  if(!location.hash.includes('access_token')) return;
+  const p = new URLSearchParams(location.hash.slice(1));
+  odToken = p.get('access_token');
+  if(odToken){
+    history.replaceState(null,'',location.pathname);
+    $('odHdrBtn').textContent = 'OneDrive 已連線';
+    $('odHdrBtn').className = 'od-btn-hdr connected';
+    toast('OneDrive 連線成功');
+  }
+}
+
+// ── Camera ────────────────────────────────────────
+$('cameraBtn').onclick = startCam;
+$('shutterBtn').onclick = capture;
+$('stopBtn').onclick = stopCam;
+$('flipBtn').onclick = async () => { facing = facing==='environment'?'user':'environment'; if(stream) await startCam(); };
+
+async function startCam(){
+  try {
+    if(stream) stopCam();
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1080}}});
+    video.srcObject = stream;
+    video.classList.add('visible');
+    preview.classList.remove('visible');
+    $('placeholder').style.display='none';
+    $('shutterRow').classList.add('visible');
+    $('actionRow').style.display='none';
+    $('cameraZone').classList.add('active');
+    ['cTL','cTR','cBL','cBR'].forEach(id=>$(id).classList.add('active'));
+    $('scanLine').classList.add('active');
+  } catch(e){ toast('無法開啟相機'); }
+}
+function stopCam(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  video.classList.remove('visible');
+  $('shutterRow').classList.remove('visible');
+  $('actionRow').style.display='flex';
+  $('cameraZone').classList.remove('active');
+  ['cTL','cTR','cBL','cBR'].forEach(id=>$(id).classList.remove('active'));
+  $('scanLine').classList.remove('active');
+  if(!preview.src||preview.src===location.href) $('placeholder').style.display='flex';
+}
+function capture(){
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const url=canvas.toDataURL('image/jpeg',0.92);
+  preview.src=url; preview.classList.add('visible');
+  stopCam(); processImg(url);
+}
+
+// ── File upload ───────────────────────────────────
+$('fileInput').onchange = async function(){
+  for(const f of this.files){
+    const url = await new Promise(r=>{ const fr=new FileReader(); fr.onload=e=>r(e.target.result); fr.readAsDataURL(f); });
+    preview.src=url; preview.classList.add('visible'); $('placeholder').style.display='none';
+    await processImg(url);
+  }
+  this.value='';
+};
+
+// ── Azure OCR ─────────────────────────────────────
+async function processImg(dataURL){
+  if(!azEndpoint||!azKey){ toast('請先設定 Azure API 金鑰'); openSettings(); return; }
+  $('statusBox').classList.add('visible');
+  $('statusText').textContent='上傳至 Azure OCR...';
+  try {
+    const blob = await fetch(dataURL).then(r=>r.blob());
+    const submitUrl = `${azEndpoint}/documentintelligence/documentModels/prebuilt-invoice:analyze?api-version=2024-02-29-preview&locale=zh-TW`;
+    const sub = await fetch(submitUrl,{
+      method:'POST',
+      headers:{'Ocp-Apim-Subscription-Key':azKey,'Content-Type':blob.type||'image/jpeg'},
+      body:blob
+    });
+    if(!sub.ok) throw new Error(`Azure ${sub.status}: ${await sub.text()}`);
+    const opUrl = sub.headers.get('Operation-Location');
+    if(!opUrl) throw new Error('未取得 Operation-Location');
+    const result = await poll(opUrl);
+    const parsed = parseAzure(result);
+    parsed.imageURL = dataURL;
+    parsed.id = ++cardCnt;
+    invoices.push(parsed);
+    renderCard(parsed);
+    updateCount();
+    toast('辨識完成');
+  } catch(e){
+    console.error(e);
+    toast('辨識失敗：'+(e.message||'請確認金鑰與端點'));
+  } finally {
+    $('statusBox').classList.remove('visible');
+  }
+}
+
+async function poll(url, tries=20){
+  for(let i=0;i<tries;i++){
+    await new Promise(r=>setTimeout(r,1500));
+    const r = await fetch(url,{headers:{'Ocp-Apim-Subscription-Key':azKey}});
+    const d = await r.json();
+    if(d.status==='succeeded') return d;
+    if(d.status==='failed') throw new Error('Azure 辨識失敗');
+    $('statusText').textContent=`辨識中 (${i+1}/${tries})...`;
+  }
+  throw new Error('辨識逾時');
+}
+
+// ── Parse Azure result ────────────────────────────
+function parseAzure(data){
+  const fields = data.analyzeResult?.documents?.[0]?.fields || {};
+  const pages  = data.analyzeResult?.pages || [];
+  const fullText = pages.flatMap(p=>p.lines||[]).map(l=>l.content).join('\n');
+
+  const gs = k => fields[k]?.valueString || fields[k]?.content || '';
+  const gn = k => fields[k]?.valueNumber;
+  const gd = k => {
+    const v = fields[k]?.valueDate || fields[k]?.content || '';
+    return v ? v.replace(/-/g,'/') : '';
+  };
+
+  let invoiceNo   = gs('InvoiceId') || gs('VoucherNumber');
+  let invoiceDate = gd('InvoiceDate');
+  let company     = gs('VendorName') || gs('CustomerName');
+  let amtN        = gn('InvoiceTotalAmount') || gn('SubTotal');
+  let amount      = amtN != null ? String(Math.round(amtN)) : '';
+  let taxN        = gn('TotalTax');
+  let tax         = taxN != null ? String(Math.round(taxN)) : '';
+
+  // Fallback regex if Azure fields missing
+  if(!invoiceNo||!invoiceDate||!company||!amount){
+    const fb = regexParse(fullText);
+    if(!invoiceNo) invoiceNo     = fb.invoiceNo;
+    if(!invoiceDate) invoiceDate = fb.invoiceDate;
+    if(!company) company         = fb.company;
+    if(!amount) amount           = fb.amount;
+    if(!tax) tax                 = fb.tax;
+  }
+  if(!tax && amount) tax = String(Math.round(parseInt(amount)*5/105));
+
+  // Normalize invoice number format
+  invoiceNo = invoiceNo.replace(/\s/g,'').toUpperCase();
+  if(/^[A-Z]{2}\d{8}$/.test(invoiceNo)) invoiceNo = invoiceNo.slice(0,2)+'-'+invoiceNo.slice(2);
+
+  let score=0;
+  if(/^[A-Z]{2}-\d{8}$/.test(invoiceNo)) score+=50; else if(invoiceNo) score+=25;
+  if(invoiceDate) score+=20;
+  if(amount) score+=20;
+  if(tax) score+=5;
+  if(company) score+=5;
+
+  return {invoiceNo,invoiceDate,amount,tax,company,confidence:score,rawText:fullText};
+}
+
+function regexParse(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const flat=text.replace(/\s+/g,' ');
+  const fxL=s=>s.toUpperCase().replace(/0/g,'O').replace(/1/g,'I').replace(/8/g,'B');
+  const fxD=s=>s.replace(/O/gi,'0').replace(/I/g,'1').replace(/l/g,'1').replace(/B/g,'8').replace(/S/g,'5').replace(/\s/g,'');
+
+  let invoiceNo='';
+  for(const src of [...lines,flat]){
+    const m=src.match(/([A-Za-z]{2})[\s\-]?(\d{8})/);
+    if(m){invoiceNo=fxL(m[1])+'-'+fxD(m[2]);break;}
+  }
+  if(!invoiceNo){ for(let i=0;i<lines.length;i++){ const lm=lines[i].match(/\b([A-Za-z]{2})\b/); if(lm){ for(let j=i;j<=Math.min(i+2,lines.length-1);j++){ const dm=lines[j].match(/\b(\d{8})\b/); if(dm){invoiceNo=fxL(lm[1])+'-'+dm[1];break;} } if(invoiceNo)break; } } }
+
+  let invoiceDate='';
+  for(const src of [...lines,flat]){ const m=src.match(/(\d{2,3})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/); if(m){let y=parseInt(m[1]);if(y<200)y+=1911;if(y>=2000&&y<=2099){invoiceDate=`${y}/${m[2].padStart(2,'0')}/${m[3].padStart(2,'0')}`;break;}} }
+
+  let amount='';
+  for(const src of [...lines,flat]){ const m=src.match(/(?:合計|總計|含稅|Amount|NT\$|\$)\s*[:：]?\s*([\d,]+)/i); if(m){amount=m[1].replace(/,/g,'');break;} }
+  if(!amount){ const ns=[...flat.matchAll(/\b(\d{3,8})\b/g)].map(m=>parseInt(m[1])).filter(n=>n>=100&&n<=9999999); if(ns.length)amount=String(Math.max(...ns)); }
+
+  let tax='';
+  for(const src of [...lines,flat]){ const m=src.match(/(?:稅額|Tax)\s*[:：]?\s*([\d,]+)/i); if(m){tax=m[1].replace(/,/g,'');break;} }
+
+  let company='';
+  const cr=/([\u4e00-\u9fff]{2,12}(?:股份有限公司|有限公司|企業|工業|科技|實業|商行|行號))/;
+  for(const line of lines){ const m=line.match(cr); if(m){company=m[1];break;} }
+
+  return {invoiceNo,invoiceDate,amount,tax,company};
+}
+
+// ── Render card ───────────────────────────────────
+function renderCard(inv){
+  if($('emptyState').parentNode) $('emptyState').remove();
+  $('listHeader').style.display='flex';
+  const cc = inv.confidence>=70?'ch':inv.confidence>=40?'cm':'cl';
+  const cl = inv.confidence>=70?'高':inv.confidence>=40?'中':'低';
+  const card=document.createElement('div');
+  card.className='invoice-card'; card.dataset.id=inv.id;
+  card.innerHTML=`
+    <div class="card-num">${inv.id}</div>
+    <div class="card-body">
+      <div class="card-no">${inv.invoiceNo||'（未辨識）'}</div>
+      <div class="card-meta">
+        ${inv.invoiceDate?`<span class="pill">${inv.invoiceDate}</span>`:''}
+        ${inv.amount?`<span class="pill hi">NT$ ${Number(inv.amount).toLocaleString()}</span>`:''}
+        ${inv.company?`<span class="pill">${inv.company}</span>`:''}
+        <span class="pill od" id="od-pill-${inv.id}">已存OneDrive</span>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:4px;flex-wrap:wrap">
+        <button class="exp-btn" onclick="toggleExpand(this,${inv.id})">
+          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          編輯欄位
+        </button>
+        <button class="exp-btn" onclick="toggleRaw(${inv.id})">查看辨識原文</button>
+        <button class="exp-btn" onclick="uploadOne(${inv.id})" style="color:var(--info)">存至OneDrive</button>
+      </div>
+      <div id="raw-${inv.id}" style="display:none;margin-top:8px;background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--muted);white-space:pre-wrap;word-break:break-all;max-height:120px;overflow-y:auto;line-height:1.6">${(inv.rawText||'').replace(/</g,'&lt;')}</div>
+      <div class="card-fields" id="flds-${inv.id}">
+        <div class="field-row"><label class="field-label">發票號碼</label><input class="field-input" data-f="invoiceNo" data-id="${inv.id}" value="${inv.invoiceNo||''}" placeholder="AB-12345678"></div>
+        <div class="field-row"><label class="field-label">發票日期</label><input class="field-input" data-f="invoiceDate" data-id="${inv.id}" value="${inv.invoiceDate||''}" placeholder="2025/01/15"></div>
+        <div class="field-row"><label class="field-label">金額（未稅）</label><input class="field-input" data-f="amount" data-id="${inv.id}" value="${inv.amount||''}" placeholder="10000"></div>
+        <div class="field-row"><label class="field-label">稅額</label><input class="field-input" data-f="tax" data-id="${inv.id}" value="${inv.tax||''}" placeholder="500"></div>
+        <div class="field-row"><label class="field-label">廠商名稱</label><input class="field-input" data-f="company" data-id="${inv.id}" value="${inv.company||''}" placeholder="廠商公司名稱"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <span class="conf ${cc}">信心 ${cl}</span>
+      <button class="del-btn" onclick="delCard(${inv.id})">✕</button>
+    </div>`;
+  card.querySelectorAll('.field-input').forEach(inp=>{
+    inp.addEventListener('change',()=>{ const i=invoices.find(x=>x.id===parseInt(inp.dataset.id)); if(i) i[inp.dataset.f]=inp.value; });
+  });
+  $('invoiceList').appendChild(card);
+}
+
+function toggleExpand(btn,id){ const f=$(`flds-${id}`); f.classList.toggle('open'); btn.querySelector('svg').style.transform=f.classList.contains('open')?'rotate(180deg)':''; }
+function toggleRaw(id){ const r=$(`raw-${id}`); r.style.display=r.style.display==='none'?'block':'none'; }
+function delCard(id){ invoices=invoices.filter(i=>i.id!==id); document.querySelector(`[data-id="${id}"]`)?.remove(); updateCount(); if(!invoices.length){$('listHeader').style.display='none';$('invoiceList').appendChild($('emptyState'));} }
+function updateCount(){ $('countDisplay').textContent=invoices.length; }
+
+// ── Clear ─────────────────────────────────────────
+function clearAll(){ invoices=[];cardCnt=0;$('invoiceList').innerHTML='';$('invoiceList').appendChild($('emptyState'));$('listHeader').style.display='none';preview.src='';preview.classList.remove('visible');$('placeholder').style.display='flex';updateCount(); }
+$('clearBtn').onclick = clearAll;
+$('clearAllBtn').onclick = clearAll;
+
+// ── OneDrive upload ───────────────────────────────
+async function ensureFolder(){
+  await fetch('https://graph.microsoft.com/v1.0/me/drive/root/children',{
+    method:'POST',
+    headers:{Authorization:`Bearer ${odToken}`,'Content-Type':'application/json'},
+    body:JSON.stringify({name:'發票掃描',folder:{}, '@microsoft.graph.conflictBehavior':'rename'})
+  });
+}
+async function odPut(path, blob){
+  const enc=path.split('/').map(p=>encodeURIComponent(p)).join('/');
+  const r=await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:${enc}:/content`,{
+    method:'PUT',
+    headers:{Authorization:`Bearer ${odToken}`,'Content-Type':blob.type||'application/octet-stream'},
+    body:blob
+  });
+  if(!r.ok) throw new Error(`上傳失敗 ${r.status}`);
+}
+
+async function uploadOne(id){
+  if(!odToken){toast('請先連線 OneDrive');handleOdLogin();return;}
+  const inv=invoices.find(i=>i.id===id); if(!inv) return;
+  $('statusBox').classList.add('visible'); $('statusText').textContent='上傳圖片至 OneDrive...';
+  try {
+    await ensureFolder();
+    const blob=await fetch(inv.imageURL).then(r=>r.blob());
+    const name=`發票_${inv.invoiceNo||'未知'}_${Date.now()}.jpg`;
+    await odPut(`/發票掃描/${name}`,blob);
+    $(`od-pill-${id}`).style.display='inline';
+    toast('已存至 OneDrive/發票掃描/');
+  } catch(e){ toast('上傳失敗：'+e.message); }
+  finally{ $('statusBox').classList.remove('visible'); }
+}
+
+$('odUploadBtn').onclick = async () => {
+  if(!odToken){toast('請先連線 OneDrive');handleOdLogin();return;}
+  if(!invoices.length){toast('尚無發票資料');return;}
+  $('statusBox').classList.add('visible');
+  try {
+    await ensureFolder();
+    // Excel
+    const xlsxBlob=buildExcelBlob();
+    const today=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    await odPut(`/發票掃描/發票清單_${today}.xlsx`,xlsxBlob);
+    // Images
+    for(const inv of invoices){
+      $('statusText').textContent=`上傳圖片 ${inv.id}/${invoices.length}...`;
+      const b=await fetch(inv.imageURL).then(r=>r.blob());
+      await odPut(`/發票掃描/發票_${inv.invoiceNo||inv.id}.jpg`,b);
+      $(`od-pill-${inv.id}`).style.display='inline';
+    }
+    toast(`${invoices.length} 張發票已存至 OneDrive`);
+  } catch(e){ toast('上傳失敗：'+e.message); }
+  finally{ $('statusBox').classList.remove('visible'); }
+};
+
+// ── Excel ─────────────────────────────────────────
+function buildExcelBlob(){
+  const rows=invoices.map((inv,i)=>({
+    '序號':i+1,'發票號碼':inv.invoiceNo||'','發票日期':inv.invoiceDate||'',
+    '廠商名稱':inv.company||'',
+    '未稅金額':inv.amount?parseInt(inv.amount):'',
+    '稅額':inv.tax?parseInt(inv.tax):'',
+    '含稅金額':(inv.amount&&inv.tax)?parseInt(inv.amount)+parseInt(inv.tax):'',
+    '信心分數':inv.confidence,'備註':inv.confidence<40?'請人工確認':''
+  }));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:6},{wch:16},{wch:14},{wch:24},{wch:12},{wch:10},{wch:12},{wch:10},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,'發票清單');
+  const total=invoices.reduce((s,i)=>s+(parseInt(i.amount)||0),0);
+  const totalTax=invoices.reduce((s,i)=>s+(parseInt(i.tax)||0),0);
+  const ws2=XLSX.utils.json_to_sheet([
+    {'項目':'發票總張數','數值':invoices.length},
+    {'項目':'未稅合計','數值':total},{'項目':'稅額合計','數值':totalTax},
+    {'項目':'含稅合計','數值':total+totalTax},
+    {'項目':'需人工確認','數值':invoices.filter(i=>i.confidence<40).length}
+  ]);
+  ws2['!cols']=[{wch:16},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,'匯總');
+  return new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+$('exportBtn').onclick = () => {
+  if(!invoices.length){toast('尚無發票資料');return;}
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(buildExcelBlob());
+  a.download=`發票清單_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`;
+  a.click(); toast(`已匯出 ${invoices.length} 張發票`);
+};
+
+// ── Toast ─────────────────────────────────────────
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>發票掃描</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
