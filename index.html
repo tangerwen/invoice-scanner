@@ -188,28 +188,6 @@ label.btn{cursor:pointer;}
 </div>
 
 <main>
-  <!-- 狀態訊息 -->
-  <div class="status-box" id="statusBox">
-    <div class="spinner"></div>
-    <div class="status-text" id="statusText">辨識中...</div>
-  </div>
-
-  <!-- 錯誤訊息（持續顯示，完整內容） -->
-  <div class="err-box" id="errBox">
-    <span class="err-icon">⚠</span>
-    <div class="err-msg" id="errMsg"></div>
-    <button class="err-close" onclick="closeErr()">✕</button>
-  </div>
-
-  <!-- 發票清單 -->
-  <div class="list-header" id="listHeader" style="display:none">
-    <span class="list-title">掃描結果</span>
-    <button class="icon-btn" id="clearAllBtn">全部清除</button>
-  </div>
-  <div class="invoice-list" id="invoiceList">
-    <!-- emptyState 在 JS 中動態管理，不寫死在這裡避免連續掃描 bug -->
-  </div>
-
   <!-- 相機預覽區（置底） -->
   <div class="camera-zone" id="cameraZone">
     <video id="video" autoplay playsinline></video>
@@ -258,6 +236,29 @@ label.btn{cursor:pointer;}
     </label>
     <input type="file" id="fileInput" accept="image/*" multiple>
   </div>
+  
+  <!-- 狀態訊息 -->
+  <div class="status-box" id="statusBox">
+    <div class="spinner"></div>
+    <div class="status-text" id="statusText">辨識中...</div>
+  </div>
+
+  <!-- 錯誤訊息（持續顯示，完整內容） -->
+  <div class="err-box" id="errBox">
+    <span class="err-icon">⚠</span>
+    <div class="err-msg" id="errMsg"></div>
+    <button class="err-close" onclick="closeErr()">✕</button>
+  </div>
+
+  <!-- 發票清單 -->
+  <div class="list-header" id="listHeader" style="display:none">
+    <span class="list-title">掃描結果</span>
+    <button class="icon-btn" id="clearAllBtn">全部清除</button>
+  </div>
+  <div class="invoice-list" id="invoiceList">
+    <!-- emptyState 在 JS 中動態管理，不寫死在這裡避免連續掃描 bug -->
+  </div>
+
 </main>
 
 <!-- 設定 Modal -->
