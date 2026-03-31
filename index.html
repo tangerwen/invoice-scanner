@@ -300,9 +300,10 @@ label.btn{cursor:pointer;}
 // ═══════════════════════════════════════════════════
 // 常數
 // ═══════════════════════════════════════════════════
-const CLIENT_ID = '7286c214-eb27-4129-a3f3-b58e10234142';
-const REDIRECT  = window.location.origin + window.location.pathname;
-const SCOPES    = 'files.readwrite offline_access';
+const CLIENT_ID      = '7286c214-eb27-4129-a3f3-b58e10234142';
+const REDIRECT       = window.location.origin + window.location.pathname;
+const SCOPES         = 'files.readwrite offline_access';
+const KADOKAWA_ID    = '16841747'; // 台灣角川統一編號（買受人）
 
 // ═══════════════════════════════════════════════════
 // 狀態
@@ -533,9 +534,42 @@ function stopCam() {
 }
 
 function capture() {
-  canvas.width  = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  // 取得 camera-zone 容器的顯示尺寸（螢幕上實際可見的像素範圍）
+  const zone    = $('cameraZone');
+  const dispW   = zone.clientWidth;
+  const dispH   = zone.clientHeight;
+  const vidW    = video.videoWidth;
+  const vidH    = video.videoHeight;
+
+  // video 使用 object-fit:cover，計算實際顯示比例與裁切偏移
+  const dispRatio = dispW / dispH;
+  const vidRatio  = vidW  / vidH;
+
+  let srcX, srcY, srcW, srcH;
+  if (vidRatio > dispRatio) {
+    // 影片比容器「更寬」→ 左右被裁切
+    srcH = vidH;
+    srcW = vidH * dispRatio;
+    srcX = (vidW - srcW) / 2;
+    srcY = 0;
+  } else {
+    // 影片比容器「更高」→ 上下被裁切
+    srcW = vidW;
+    srcH = vidW / dispRatio;
+    srcX = 0;
+    srcY = (vidH - srcH) / 2;
+  }
+
+  // 輸出解析度：以 2× 螢幕密度為基準，保留足夠 OCR 品質
+  const scale  = Math.min(window.devicePixelRatio || 2, 3);
+  canvas.width  = Math.round(dispW  * scale);
+  canvas.height = Math.round(dispH  * scale);
+  canvas.getContext('2d').drawImage(
+    video,
+    srcX, srcY, srcW, srcH,         // 來源：sensor 上的可見區域
+    0, 0, canvas.width, canvas.height // 目標：canvas 全幅
+  );
+
   const url = canvas.toDataURL('image/jpeg', 0.92);
   preview.src = url;
   preview.classList.add('visible');
@@ -599,10 +633,18 @@ async function processImg(dataURL) {
     const parsed = parseReadResult(result);
     parsed.imageURL = dataURL;
     parsed.id       = ++cardCnt;
+
+    // ── 台灣角川買受人驗證 ──
+    if (!parsed.hasBuyerTaxId) {
+      toast('⚠ 買受人非台灣角川');
+      // 以非阻斷方式提示（也可改 alert，視需求）
+      setTimeout(() => showErr('⚠ 買受人非台灣角川（未偵測到統編 16841747），請確認此發票是否正確。'), 100);
+    }
+
     invoices.push(parsed);
     renderCard(parsed);
     updateCount();
-    toast('辨識完成');
+    if (parsed.hasBuyerTaxId) toast('辨識完成');
   } catch (e) {
     console.error(e);
     showErr(e.message || '發生未知錯誤，請查看瀏覽器 Console');
@@ -838,6 +880,38 @@ function parseReadResult(data) {
   if (totalAmt && amount && !tax) tax      = String(parseInt(totalAmt)-parseInt(amount));
   if (totalAmt && !tax)           tax      = String(Math.round(parseInt(totalAmt)*5/105));
 
+  // ── 買受人 vs 廠商統編區分 ───────────────────────────
+  // 發票上通常有兩組統編：買受人（台灣角川 16841747）和賣方（廠商）
+  // 先從全文找出所有通過驗算的8位數統編候選
+  const allTaxCandidates = [];
+  for (const l of allLines) {
+    for (const m of l.text.matchAll(/\b(\d{8})\b/g)) {
+      if (validateTaxId(m[1]) && !allTaxCandidates.includes(m[1])) {
+        allTaxCandidates.push(m[1]);
+      }
+    }
+  }
+
+  // 判斷是否有買受人統編 16841747
+  const hasBuyerTaxId = allTaxCandidates.includes(KADOKAWA_ID) ||
+    fullText.includes(KADOKAWA_ID);
+
+  let buyerTaxId  = '';
+  // 若找到台灣角川統編，則賣方統編 = 排除 16841747 後的第一個合法統編
+  if (hasBuyerTaxId) {
+    buyerTaxId = KADOKAWA_ID;
+    const sellerCand = allTaxCandidates.filter(c => c !== KADOKAWA_ID);
+    if (sellerCand.length > 0) {
+      vendorTaxId = sellerCand[0];
+      taxIdValid  = true;
+    }
+    // 若 vendorTaxId 本身就是 16841747（誤抓買受人），也清掉
+    if (vendorTaxId === KADOKAWA_ID) {
+      vendorTaxId = sellerCand.length > 0 ? sellerCand[0] : '';
+      taxIdValid  = vendorTaxId ? true : null;
+    }
+  }
+
   // ── 信心分數 ──────────────────────────────────────
   let score = 0;
   if (/^[A-Z]{2}-\d{8}$/.test(invoiceNo)) score += 50; else if (invoiceNo) score += 20;
@@ -847,7 +921,7 @@ function parseReadResult(data) {
   if (company)     score +=  5;
   if (vendorTaxId) score +=  2;
 
-  return { invoiceNo, invoiceDate, amount, tax, totalAmt, company, vendorTaxId, taxIdValid, confidence:score, rawText:fullText };
+  return { invoiceNo, invoiceDate, amount, tax, totalAmt, company, vendorTaxId, taxIdValid, buyerTaxId, hasBuyerTaxId, confidence:score, rawText:fullText };
 }
 
 // 從文字中抓出合理金額數字（100~9,999,999，排除日期數字）
@@ -893,11 +967,15 @@ function renderCard(inv) {
   let taxIdPill = '';
   if (inv.vendorTaxId) {
     if (inv.taxIdValid) {
-      taxIdPill = `<span class="pill ok" title="統編驗算通過">統編 ${inv.vendorTaxId} ✓</span>`;
+      taxIdPill = `<span class="pill ok" title="廠商統編驗算通過">廠商 ${inv.vendorTaxId} ✓</span>`;
     } else {
-      taxIdPill = `<span class="pill bad" title="統編驗算未通過，請人工確認">統編 ${inv.vendorTaxId} ✗</span>`;
+      taxIdPill = `<span class="pill bad" title="廠商統編驗算未通過，請人工確認">廠商 ${inv.vendorTaxId} ✗</span>`;
     }
   }
+  // 買受人標籤
+  const buyerPill = inv.hasBuyerTaxId
+    ? `<span class="pill ok" title="買受人台灣角川 ${KADOKAWA_ID}">買受人 ✓</span>`
+    : `<span class="pill bad" title="未偵測到台灣角川統編">買受人 ✗</span>`;
 
   const card = document.createElement('div');
   card.className  = 'invoice-card';
@@ -909,6 +987,7 @@ function renderCard(inv) {
       <div class="card-meta">
         ${inv.invoiceDate ? `<span class="pill">${inv.invoiceDate}</span>` : ''}
         ${inv.company     ? `<span class="pill">${inv.company}</span>` : ''}
+        ${buyerPill}
         ${taxIdPill}
       </div>
       <div class="card-meta" style="margin-top:2px">
@@ -932,6 +1011,7 @@ function renderCard(inv) {
         <div class="field-row"><label class="field-label">發票號碼</label><input class="field-input" data-f="invoiceNo" data-id="${inv.id}" value="${inv.invoiceNo||''}" placeholder="AB-12345678"></div>
         <div class="field-row"><label class="field-label">發票日期</label><input class="field-input" data-f="invoiceDate" data-id="${inv.id}" value="${inv.invoiceDate||''}" placeholder="2025/01/15"></div>
         <div class="field-row"><label class="field-label">廠商名稱</label><input class="field-input" data-f="company" data-id="${inv.id}" value="${inv.company||''}" placeholder="廠商公司名稱"></div>
+        <div class="field-row"><label class="field-label">買受人統一編號（台灣角川）</label><input class="field-input" data-f="buyerTaxId" data-id="${inv.id}" value="${inv.buyerTaxId||KADOKAWA_ID}" placeholder="16841747" readonly style="color:var(--muted)"></div>
         <div class="field-row"><label class="field-label">廠商統一編號</label><input class="field-input" data-f="vendorTaxId" data-id="${inv.id}" value="${inv.vendorTaxId||''}" placeholder="12345678" oninput="recheckTaxId(this,${inv.id})"></div>
         <div class="field-row"><label class="field-label">未稅金額</label><input class="field-input" data-f="amount" data-id="${inv.id}" value="${inv.amount||''}" placeholder="10000"></div>
         <div class="field-row"><label class="field-label">稅額（5%）</label><input class="field-input" data-f="tax" data-id="${inv.id}" value="${inv.tax||''}" placeholder="500"></div>
@@ -1070,21 +1150,22 @@ $('odUploadBtn').onclick = async () => {
 // ═══════════════════════════════════════════════════
 function buildExcelBlob() {
   const rows = invoices.map((inv, i) => ({
-    '序號':     i + 1,
-    '發票號碼': inv.invoiceNo   || '',
-    '發票日期': inv.invoiceDate || '',
-    '廠商名稱': inv.company     || '',
-    '廠商統編': inv.vendorTaxId || '',
-    '統編驗算': inv.taxIdValid === true ? '通過' : inv.taxIdValid === false ? '未通過' : '',
-    '未稅金額': inv.amount   ? parseInt(inv.amount)   : '',
-    '稅額':     inv.tax      ? parseInt(inv.tax)      : '',
-    '含稅合計': inv.totalAmt ? parseInt(inv.totalAmt) : (inv.amount && inv.tax ? parseInt(inv.amount)+parseInt(inv.tax) : ''),
-    '信心分數': inv.confidence,
-    '備註':     inv.confidence < 40 ? '請人工確認' : '',
+    '序號':         i + 1,
+    '發票號碼':     inv.invoiceNo   || '',
+    '發票日期':     inv.invoiceDate || '',
+    '廠商名稱':     inv.company     || '',
+    '買受人統編':   inv.buyerTaxId  || KADOKAWA_ID,
+    '廠商統編':     inv.vendorTaxId || '',
+    '統編驗算':     inv.taxIdValid === true ? '通過' : inv.taxIdValid === false ? '未通過' : '',
+    '未稅金額':     inv.amount   ? parseInt(inv.amount)   : '',
+    '稅額':         inv.tax      ? parseInt(inv.tax)      : '',
+    '含稅合計':     inv.totalAmt ? parseInt(inv.totalAmt) : (inv.amount && inv.tax ? parseInt(inv.amount)+parseInt(inv.tax) : ''),
+    '信心分數':     inv.confidence,
+    '備註':         !inv.hasBuyerTaxId ? '買受人非台灣角川' : inv.confidence < 40 ? '請人工確認' : '',
   }));
   const wb  = XLSX.utils.book_new();
   const ws  = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:24},{wch:12},{wch:8},{wch:12},{wch:10},{wch:12},{wch:10},{wch:14}];
+  ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:24},{wch:12},{wch:12},{wch:8},{wch:12},{wch:10},{wch:12},{wch:10},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws, '發票清單');
 
   const total    = invoices.reduce((s,i) => s+(parseInt(i.amount)||0),    0);
