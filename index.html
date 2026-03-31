@@ -534,7 +534,7 @@ function stopCam() {
 function capture() {
   canvas.width  = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
   const url = canvas.toDataURL('image/jpeg', 0.92);
   preview.src = url;
   preview.classList.add('visible');
