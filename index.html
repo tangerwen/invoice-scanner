@@ -431,7 +431,7 @@ async function startCam() {
   try {
     if (stream) stopCam();
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      video: { facingMode: facing, width: { ideal: 1080 }, height: { ideal: 1920 } }
     });
     video.srcObject = stream;
     video.classList.add('visible');
@@ -485,7 +485,7 @@ function stopCam() {
 function capture() {
   canvas.width  = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
   const url = canvas.toDataURL('image/jpeg', 0.92);
   preview.src = url;
   preview.classList.add('visible');
