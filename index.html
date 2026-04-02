@@ -965,60 +965,102 @@ function parseReadResult(data) {
   if (!vendorTaxId) { const m = fullText.match(/\b(\d{8})\b/); if (m) { vendorTaxId = m[1]; taxIdValid = validateTaxId(m[1]); } }
 
   const bottomLines = allLines.filter(l => l.y > pageH * 0.45);
-  let amount = '', tax = '', totalAmt = '';
-  const amtKeyRe = /銷售額|未稅|小計|合計|稅額|總計|應收|應付|含稅/;
-  const usedIdx = new Set();
-  const clusters = [];
-  for (let i = 0; i < bottomLines.length; i++) {
-    if (usedIdx.has(i)) continue;
-    const cluster = [bottomLines[i]]; usedIdx.add(i);
-    for (let j = i+1; j < bottomLines.length; j++) {
-      if (!usedIdx.has(j) && Math.abs(bottomLines[j].y - bottomLines[i].y) <= 12) { cluster.push(bottomLines[j]); usedIdx.add(j); }
-    }
-    clusters.push(cluster);
-  }
-  let bestCluster = null;
-  for (const cluster of clusters) {
-    const clText = cluster.map(l => l.text).join(' ');
-    const nums   = extractNums(clText);
-    if (nums.length >= 2 && (amtKeyRe.test(clText) || nums.length >= 3)) { bestCluster = cluster; break; }
-  }
-  if (!bestCluster) {
-    for (let i = 0; i < bottomLines.length - 1; i++) {
-      const n0 = /^[\s\d,，]+$/.test(bottomLines[i].text);
-      const n1 = /^[\s\d,，]+$/.test(bottomLines[i+1]?.text);
-      if (n0 && n1) {
-        bestCluster = [bottomLines[i], bottomLines[i+1]];
-        if (/^[\s\d,，]+$/.test(bottomLines[i+2]?.text)) bestCluster.push(bottomLines[i+2]);
-        break;
+    // 收集下半部所有候選數字
+    // 排除8位數（統編）、過小（數量/單價）、過大
+    const allNums = [];
+    for (const l of bottomLines) {
+      const matches = [...l.text.matchAll(/[\d,，]+/g)];
+      for (const m of matches) {
+        const n = parseInt(m[0].replace(/[,，]/g, ''));
+        if (n >= 100 && n <= 9999999 && !/^\d{8}$/.test(m[0].replace(/[,，]/g,''))) {
+          allNums.push(n);
+        }
       }
     }
-  }
-  if (bestCluster) {
-    const sorted = [...bestCluster].sort((a,b) => a.x - b.x);
-    const nums   = extractNums(sorted.map(l=>l.text).join(' ')).sort((a,b)=>a-b);
-    if (nums.length >= 3) {
-      amount = String(nums[nums.length-3]); tax = String(nums[nums.length-2]); totalAmt = String(nums[nums.length-1]);
-      const calc = parseInt(amount) + parseInt(tax);
-      if (Math.abs(calc - parseInt(totalAmt)) / parseInt(totalAmt) > 0.05) {
-        tax = String(Math.round(parseInt(totalAmt) * 5 / 105)); amount = String(parseInt(totalAmt) - parseInt(tax));
+    // 去重並排序
+    const candidates = [...new Set(allNums)].sort((a, b) => a - b);
+    
+    // 暴力枚舉：找滿足 a + t = total 且 t ≈ a*0.05 的組合
+    let amount = '', tax = '', totalAmt = '';
+    let found = false;
+    for (let i = 0; i < candidates.length && !found; i++) {
+      for (let j = i; j < candidates.length && !found; j++) {
+        for (let k = j; k < candidates.length && !found; k++) {
+          const a = candidates[i];
+          const t = candidates[j];
+          const total = candidates[k];
+          if (a + t === total) {
+            const expectedTax = Math.round(a * 0.05);
+            if (Math.abs(t - expectedTax) <= 1) {
+              amount   = String(a);
+              tax      = String(t);
+              totalAmt = String(total);
+              found = true;
+            }
+          }
+        }
       }
-    } else if (nums.length === 2) {
-      const [s, l] = nums;
-      if (s / l > 0.03 && s / l < 0.07) { tax = String(s); totalAmt = String(l); amount = String(l - s); }
-      else { amount = String(s); totalAmt = String(l); tax = String(Math.round(l * 5 / 105)); }
-    } else if (nums.length === 1) {
-      totalAmt = String(nums[0]); tax = String(Math.round(nums[0] * 5 / 105)); amount = String(nums[0] - parseInt(tax));
     }
-  }
-  const btText = bottomLines.map(l=>l.text).join('\n');
-  if (!amount)   { const m=btText.match(/(?:未稅|銷售額|小計)\s*[:：]?\s*([\d,，]+)/);   if(m) amount=m[1].replace(/[,，]/g,''); }
-  if (!tax)      { const m=btText.match(/(?:稅額|營業稅)\s*[:：]?\s*([\d,，]+)/);        if(m) tax=m[1].replace(/[,，]/g,''); }
-  if (!totalAmt) { const m=btText.match(/(?:合計|總計|含稅合計|應收|應付)\s*[:：]?\s*([\d,，]+)/); if(m) totalAmt=m[1].replace(/[,，]/g,''); }
-  if (amount && tax && !totalAmt) totalAmt = String(parseInt(amount)+parseInt(tax));
-  if (totalAmt && tax && !amount) amount   = String(parseInt(totalAmt)-parseInt(tax));
-  if (totalAmt && amount && !tax) tax      = String(parseInt(totalAmt)-parseInt(amount));
-  if (totalAmt && !tax)           tax      = String(Math.round(parseInt(totalAmt)*5/105));
+    
+    // 找不到完整三個，找兩個數字，第三個推算
+    if (!found) {
+      // 情況一：找到 amount 和 tax，推算 total
+      for (let i = 0; i < candidates.length && !found; i++) {
+        for (let j = i + 1; j < candidates.length && !found; j++) {
+          const a = candidates[i];
+          const t = candidates[j];
+          if (Math.abs(t - Math.round(a * 0.05)) <= 1) {
+            amount   = String(a);
+            tax      = String(t);
+            totalAmt = String(a + t);
+            found = true;
+          }
+        }
+      }
+    }
+    if (!found) {
+      // 情況二：找到 amount，tax 和 total 都推算
+      for (let i = 0; i < candidates.length && !found; i++) {
+        const a = candidates[i];
+        const t = Math.round(a * 0.05);
+        const total = a + t;
+        // 確認 tax 或 total 其中一個有出現在候選數字裡
+        if (candidates.includes(t) || candidates.includes(total)) {
+          amount   = String(a);
+          tax      = String(t);
+          totalAmt = String(total);
+          found = true;
+        }
+      }
+    }
+    
+    // 最後 fallback：關鍵字附近找數字
+    function findAmtNearKeyword(lines, keyRe) {
+      for (let i = 0; i < lines.length; i++) {
+        if (!keyRe.test(lines[i].text)) continue;
+        const keyY = lines[i].y;
+        const nearby = lines.filter(l =>
+          Math.abs(l.y - keyY) <= 60 &&
+          /^[\s$＄\d,，]+$/.test(l.text) &&
+          extractNums(l.text).length > 0
+        );
+        if (nearby.length > 0) {
+          nearby.sort((a, b) => Math.abs(a.y - keyY) - Math.abs(b.y - keyY));
+          const n = extractNums(nearby[0].text);
+          if (n.length > 0) return String(n[n.length - 1]);
+        }
+      }
+      return '';
+    }
+    if (!amount)   amount   = findAmtNearKeyword(bottomLines, /銷|售|銷售|銷售額|未稅|小計/);
+    if (!tax)      tax      = findAmtNearKeyword(bottomLines, /營業稅|營業税|業稅|業税/);
+    if (!totalAmt) totalAmt = findAmtNearKeyword(bottomLines, /總計|总計|合計/);
+    
+    // 互推缺少的欄位
+    if (amount && tax && !totalAmt) totalAmt = String(parseInt(amount) + parseInt(tax));
+    if (totalAmt && tax && !amount) amount   = String(parseInt(totalAmt) - parseInt(tax));
+    if (totalAmt && amount && !tax) tax      = String(parseInt(totalAmt) - parseInt(amount));
+    if (totalAmt && !tax)           tax      = String(Math.round(parseInt(totalAmt) * 5 / 105));
 
   const allTaxCandidates = [];
   for (const l of allLines) {
