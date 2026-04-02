@@ -31,8 +31,19 @@ header{padding:12px 16px;display:flex;align-items:center;justify-content:space-b
 .od-hdr{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;white-space:nowrap;}
 .od-hdr.connected{color:var(--info);border-color:#1e3a5f;background:#0a1a2a;}
 
-/* ── Main ── */
-main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+/* ── Tab bar ── */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);}
+.tab-btn{flex:1;padding:11px 8px;font-size:14px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-badge{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 7px;font-size:11px;color:var(--muted);min-width:20px;text-align:center;}
+.tab-btn.active .tab-badge{color:var(--accent);border-color:#1a4a2a;background:#0f2a1a;}
+
+/* ── Tab panels ── */
+.tab-panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.tab-panel.active{display:flex;}
+
+/* ── Main scroll area ── */
+.panel-scroll{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
 
 /* ── Camera zone ── */
 .camera-zone{
@@ -52,7 +63,6 @@ main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow-y:
 .scan-line{position:absolute;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanMove 2s ease-in-out infinite;display:none;}
 .scan-line.active{display:block;}
 @keyframes scanMove{0%{top:12%;opacity:0;}8%{opacity:1;}92%{opacity:1;}100%{top:88%;opacity:0;}}
-/* 下半部金額偵測區標記線 */
 .half-line{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(74,222,128,0.25);pointer-events:none;display:none;}
 .half-line.active{display:block;}
 .corner{position:absolute;width:22px;height:22px;border-color:var(--accent);border-style:solid;display:none;}
@@ -62,28 +72,39 @@ main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow-y:
 .corner.bl{bottom:8px;left:8px;border-width:0 0 3px 3px;}
 .corner.br{bottom:8px;right:8px;border-width:0 3px 3px 0;}
 
-/* ── 拍照模式下方控制列（移到下方） ── */
-.shutter-bar{
-  display:none;flex-direction:column;gap:8px;
-  background:var(--surface);border-radius:var(--radius);
-  padding:12px 16px;
-}
+/* ── Pending edit card (scan tab) ── */
+.pending-card{background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px;animation:slideIn 0.25s ease;}
+.pending-header{display:flex;align-items:center;justify-content:space-between;}
+.pending-title{font-size:13px;font-weight:600;color:var(--accent);}
+.pending-hint{font-size:11px;color:var(--muted);}
+.pending-invoice-no{font-size:18px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:1px;color:var(--text);}
+.pending-meta{display:flex;gap:5px;flex-wrap:wrap;}
+.pending-fields{display:flex;flex-direction:column;gap:8px;}
+.field-row{display:flex;flex-direction:column;gap:2px;}
+.field-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.field-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;color:var(--text);width:100%;}
+.field-input:focus{outline:none;border-color:var(--accent);}
+.pending-actions{display:flex;gap:8px;}
+.pending-raw{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--muted);white-space:pre-wrap;word-break:break-all;max-height:140px;overflow-y:auto;line-height:1.6;display:none;}
+.pending-raw.open{display:block;}
+
+/* ── Next scan notice ── */
+.next-scan-notice{background:#0f2a1a;border:1px solid #1a4a2a;border-radius:12px;padding:12px 14px;font-size:13px;color:var(--accent);text-align:center;display:none;}
+.next-scan-notice.visible{display:block;}
+
+/* ── Shutter bar ── */
+.shutter-bar{display:none;flex-direction:column;gap:8px;background:var(--surface);border-radius:var(--radius);padding:12px 16px;}
 .shutter-bar.visible{display:flex;}
 .shutter-row{display:flex;align-items:center;justify-content:center;gap:20px;}
-
-/* ── 縮放滑桿（可選功能，不需要可刪除此區塊） ── */
-/* [OPTIONAL ZOOM] 開始 — 刪除此區塊及 JS 中標記 [OPTIONAL ZOOM] 的部分即可移除縮放功能 */
 .zoom-row{display:flex;align-items:center;gap:10px;}
 .zoom-label{font-size:11px;color:var(--muted);white-space:nowrap;min-width:36px;}
 #zoomSlider{flex:1;accent-color:var(--accent);}
-/* [OPTIONAL ZOOM] 結束 */
-
 .shutter-btn{width:68px;height:68px;border-radius:50%;background:white;border:4px solid var(--accent);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
 .shutter-btn:active{transform:scale(0.93);background:var(--accent);}
 .flip-btn{width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;}
 .stop-btn{width:44px;height:44px;border-radius:50%;background:#2a1515;border:1px solid #5a2020;cursor:pointer;color:var(--danger);display:flex;align-items:center;justify-content:center;}
 
-/* ── 一般操作按鈕 ── */
+/* ── Action buttons ── */
 .btn-row{display:flex;gap:10px;}
 .btn{flex:1;padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;}
 .btn:active{transform:scale(0.97);}
@@ -91,6 +112,7 @@ main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow-y:
 .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
 .btn-export{background:#1a2a3a;color:var(--info);border:1px solid #1e3a5f;}
 .btn-od{background:#0a1a2a;color:var(--info);border:1px solid #1e3a5f;}
+.btn-danger{background:#2a1010;color:var(--danger);border:1px solid #5a2020;}
 .btn:disabled{opacity:0.4;cursor:not-allowed;}
 #fileInput{display:none;}
 label.btn{cursor:pointer;}
@@ -106,6 +128,10 @@ label.btn{cursor:pointer;}
 .err-icon{flex-shrink:0;font-size:16px;}
 .err-msg{flex:1;max-height:140px;overflow-y:auto;white-space:pre-wrap;}
 .err-close{flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;}
+
+/* ── List tab toolbar ── */
+.list-toolbar{display:flex;gap:8px;padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.list-toolbar .btn{padding:10px 8px;font-size:13px;}
 
 /* ── Cards ── */
 .list-header{display:flex;align-items:center;justify-content:space-between;padding:0 2px;}
@@ -123,6 +149,7 @@ label.btn{cursor:pointer;}
 .pill.od{color:var(--info);display:none;}
 .pill.ok{color:var(--accent);}
 .pill.bad{color:var(--danger);background:#2a1010;}
+.pill.edited{color:var(--warn);background:#2a2000;}
 .conf{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600;}
 .ch{background:#0f2a1a;color:var(--accent);}
 .cm{background:#2a2000;color:var(--warn);}
@@ -133,14 +160,9 @@ label.btn{cursor:pointer;}
 .exp-btn:hover{color:var(--text);}
 .card-fields{display:none;flex-direction:column;gap:8px;margin-top:6px;}
 .card-fields.open{display:flex;}
-.field-row{display:flex;flex-direction:column;gap:2px;}
-.field-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
-.field-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;color:var(--text);width:100%;}
-.field-input:focus{outline:none;border-color:var(--accent);}
+.card-field-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;color:var(--text);width:100%;}
+.card-field-input:focus{outline:none;border-color:var(--accent);}
 .empty-state{text-align:center;padding:32px 20px;color:var(--muted);font-size:14px;border:1px dashed var(--border);border-radius:var(--radius);}
-
-/* ── Export bar ── */
-.export-bar{background:var(--bg);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;flex-shrink:0;}
 
 /* ── Settings modal ── */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:flex-end;justify-content:center;z-index:200;}
@@ -174,92 +196,126 @@ label.btn{cursor:pointer;}
   </div>
 </header>
 
-<!-- 狀態列（操作按鈕列：清除、OneDrive、Excel） -->
-<div class="export-bar">
-  <button class="btn btn-secondary" id="clearBtn" style="flex:0.5">清除</button>
-  <button class="btn btn-od" id="odUploadBtn" style="flex:1">
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-    存至 OneDrive
+<!-- Tab bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tabScanBtn" onclick="switchTab('scan')">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    掃描
   </button>
-  <button class="btn btn-export" id="exportBtn" style="flex:1">
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-    匯出 Excel
+  <button class="tab-btn" id="tabListBtn" onclick="switchTab('list')">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    清單
+    <span class="tab-badge" id="listBadge">0</span>
   </button>
 </div>
 
-<main>
-  <!-- 相機預覽區（置底） -->
-  <div class="camera-zone" id="cameraZone">
-    <video id="video" autoplay playsinline></video>
-    <img id="preview" alt="">
-    <div class="cam-ph" id="placeholder">
-      <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-      <p>點擊「拍照掃描」或「選圖上傳」</p>
-    </div>
-    <div class="scan-line" id="scanLine"></div>
-    <div class="half-line" id="halfLine"></div>
-    <div class="corner tl" id="cTL"></div><div class="corner tr" id="cTR"></div>
-    <div class="corner bl" id="cBL"></div><div class="corner br" id="cBR"></div>
-  </div>
+<!-- ══════════════════════════════════════ -->
+<!-- 掃描分頁                               -->
+<!-- ══════════════════════════════════════ -->
+<div class="tab-panel active" id="panelScan">
+  <div class="panel-scroll">
 
-  <!-- 拍照模式控制列 -->
-  <div class="shutter-bar" id="shutterBar">
-    <div class="zoom-row">
-      <span class="zoom-label" id="zoomLabel">1.0x</span>
-      <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
+    <!-- 相機預覽區 -->
+    <div class="camera-zone" id="cameraZone">
+      <video id="video" autoplay playsinline></video>
+      <img id="preview" alt="">
+      <div class="cam-ph" id="placeholder">
+        <svg width="56" height="56" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <p>點擊「拍照掃描」或「選圖上傳」</p>
+      </div>
+      <div class="scan-line" id="scanLine"></div>
+      <div class="half-line" id="halfLine"></div>
+      <div class="corner tl" id="cTL"></div><div class="corner tr" id="cTR"></div>
+      <div class="corner bl" id="cBL"></div><div class="corner br" id="cBR"></div>
     </div>
-    <div class="shutter-row">
-      <button class="flip-btn" id="flipBtn" title="切換前後鏡頭">
-        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-      </button>
-      <button class="shutter-btn" id="shutterBtn" title="拍照">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0d1f12" stroke-width="2.5"><circle cx="12" cy="12" r="4" fill="#0d1f12"/></svg>
-      </button>
-      <button class="stop-btn" id="stopBtn" title="取消拍照">
-        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-  </div>
 
-  <!-- 一般操作按鈕列 -->
-  <div class="btn-row" id="actionRow">
-    <button class="btn btn-primary" id="cameraBtn">
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      拍照掃描
+    <!-- 拍照模式控制列 -->
+    <div class="shutter-bar" id="shutterBar">
+      <div class="zoom-row">
+        <span class="zoom-label" id="zoomLabel">1.0x</span>
+        <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
+      </div>
+      <div class="shutter-row">
+        <button class="flip-btn" id="flipBtn" title="切換前後鏡頭">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+        <button class="shutter-btn" id="shutterBtn" title="拍照">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0d1f12" stroke-width="2.5"><circle cx="12" cy="12" r="4" fill="#0d1f12"/></svg>
+        </button>
+        <button class="stop-btn" id="stopBtn" title="取消拍照">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 一般操作按鈕列 -->
+    <div class="btn-row" id="actionRow">
+      <button class="btn btn-primary" id="cameraBtn">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        拍照掃描
+      </button>
+      <label class="btn btn-secondary" for="fileInput">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        選圖上傳
+      </label>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+    </div>
+
+    <!-- 狀態訊息 -->
+    <div class="status-box" id="statusBox">
+      <div class="spinner"></div>
+      <div class="status-text" id="statusText">辨識中...</div>
+    </div>
+
+    <!-- 錯誤訊息 -->
+    <div class="err-box" id="errBox">
+      <span class="err-icon">⚠</span>
+      <div class="err-msg" id="errMsg"></div>
+      <button class="err-close" onclick="closeErr()">✕</button>
+    </div>
+
+    <!-- 已存入清單提示 -->
+    <div class="next-scan-notice" id="nextScanNotice">
+      ✓ 已存入清單，可繼續掃描下一張
+    </div>
+
+    <!-- 待編輯區（掃描完成後顯示） -->
+    <div id="pendingArea"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- 清單分頁                               -->
+<!-- ══════════════════════════════════════ -->
+<div class="tab-panel" id="panelList">
+  <!-- 工具列（清除、OneDrive、Excel） -->
+  <div class="list-toolbar">
+    <button class="btn btn-danger" id="clearBtn" style="flex:0.6;padding:10px 6px;font-size:12px">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      清除
     </button>
-    <label class="btn btn-secondary" for="fileInput">
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-      選圖上傳
-    </label>
-    <input type="file" id="fileInput" accept="image/*" multiple>
-  </div>
-  
-  <!-- 狀態訊息 -->
-  <div class="status-box" id="statusBox">
-    <div class="spinner"></div>
-    <div class="status-text" id="statusText">辨識中...</div>
+    <button class="btn btn-od" id="odUploadBtn" style="flex:1;padding:10px 6px;font-size:12px">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+      存至 OneDrive
+    </button>
+    <button class="btn btn-export" id="exportBtn" style="flex:1;padding:10px 6px;font-size:12px">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      匯出 Excel
+    </button>
   </div>
 
-  <!-- 錯誤訊息（持續顯示，完整內容） -->
-  <div class="err-box" id="errBox">
-    <span class="err-icon">⚠</span>
-    <div class="err-msg" id="errMsg"></div>
-    <button class="err-close" onclick="closeErr()">✕</button>
+  <div class="panel-scroll">
+    <div class="list-header" id="listHeader" style="display:none">
+      <span class="list-title">掃描結果</span>
+      <button class="icon-btn" id="clearAllBtn">全部清除</button>
+    </div>
+    <div class="invoice-list" id="invoiceList"></div>
   </div>
-
-  <!-- 發票清單 -->
-  <div class="list-header" id="listHeader" style="display:none">
-    <span class="list-title">掃描結果</span>
-    <button class="icon-btn" id="clearAllBtn">全部清除</button>
-  </div>
-  <div class="invoice-list" id="invoiceList">
-    <!-- emptyState 在 JS 中動態管理，不寫死在這裡避免連續掃描 bug -->
-  </div>
-
-</main>
+</div>
 
 <!-- 設定 Modal -->
 <div class="modal-bg" id="settingsModal">
@@ -303,7 +359,7 @@ label.btn{cursor:pointer;}
 const CLIENT_ID      = '7286c214-eb27-4129-a3f3-b58e10234142';
 const REDIRECT       = window.location.origin + window.location.pathname;
 const SCOPES         = 'files.readwrite offline_access';
-const KADOKAWA_ID    = '16841747'; // 台灣角川統一編號（買受人）
+const KADOKAWA_ID    = '16841747';
 
 // ═══════════════════════════════════════════════════
 // 狀態
@@ -315,7 +371,8 @@ let invoices = [];
 let stream   = null;
 let facing   = 'environment';
 let cardCnt  = 0;
-let zoomTrack = null; // [OPTIONAL ZOOM] 縮放用的 video track
+let zoomTrack = null;
+let pendingInvoice = null; // 正在掃描分頁上等待編輯的發票
 
 // ═══════════════════════════════════════════════════
 // DOM 輔助
@@ -329,10 +386,23 @@ const canvas  = $('canvas');
 // 初始化
 // ═══════════════════════════════════════════════════
 updateCfgBanner();
-handleOAuthReturn(); // async, no need to await at top level
+handleOAuthReturn();
 $('cfgRedirect').value = REDIRECT;
+$('invoiceList').appendChild(getOrCreateEmptyState());
 
-// 初始化 emptyState（用 JS 動態建立，避免連續掃描時 parentNode 為 null）
+// ═══════════════════════════════════════════════════
+// Tab 切換
+// ═══════════════════════════════════════════════════
+function switchTab(tab) {
+  $('tabScanBtn').classList.toggle('active', tab === 'scan');
+  $('tabListBtn').classList.toggle('active', tab === 'list');
+  $('panelScan').classList.toggle('active', tab === 'scan');
+  $('panelList').classList.toggle('active', tab === 'list');
+}
+
+// ═══════════════════════════════════════════════════
+// emptyState
+// ═══════════════════════════════════════════════════
 function getOrCreateEmptyState() {
   let es = $('emptyState');
   if (!es) {
@@ -347,7 +417,6 @@ function getOrCreateEmptyState() {
   }
   return es;
 }
-$('invoiceList').appendChild(getOrCreateEmptyState());
 
 // ═══════════════════════════════════════════════════
 // 設定
@@ -388,7 +457,7 @@ function showErr(msg) {
 function closeErr() { $('errBox').classList.remove('visible'); }
 
 // ═══════════════════════════════════════════════════
-// OneDrive OAuth (PKCE Authorization Code Flow)
+// OneDrive OAuth (PKCE)
 // ═══════════════════════════════════════════════════
 function generateCodeVerifier() {
   const arr = new Uint8Array(64);
@@ -399,16 +468,12 @@ async function generateCodeChallenge(verifier) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
   return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
-
 async function handleOdLogin() {
   if (odToken) { toast('OneDrive 已連線'); return; }
-  const go = confirm(
-    '登入前請確認 Redirect URI 已加入 Azure App Registration：\n\n' +
-    REDIRECT + '\n\n點「確定」繼續登入。'
-  );
+  const go = confirm('登入前請確認 Redirect URI 已加入 Azure App Registration：\n\n' + REDIRECT + '\n\n點「確定」繼續登入。');
   if (!go) return;
-  const verifier   = generateCodeVerifier();
-  const challenge  = await generateCodeChallenge(verifier);
+  const verifier  = generateCodeVerifier();
+  const challenge = await generateCodeChallenge(verifier);
   sessionStorage.setItem('od_verifier', verifier);
   location.href =
     `https://login.microsoftonline.com/common/oauth2/v2.0/authorize` +
@@ -418,9 +483,7 @@ async function handleOdLogin() {
     `&response_mode=query` +
     `&code_challenge=${challenge}&code_challenge_method=S256`;
 }
-
 async function handleOAuthReturn() {
-  // PKCE: handle ?code= in query string
   const params = new URLSearchParams(location.search);
   const code   = params.get('code');
   if (code) {
@@ -428,18 +491,8 @@ async function handleOAuthReturn() {
     sessionStorage.removeItem('od_verifier');
     history.replaceState(null, '', location.pathname);
     try {
-      const body = new URLSearchParams({
-        client_id:     CLIENT_ID,
-        grant_type:    'authorization_code',
-        code,
-        redirect_uri:  REDIRECT,
-        code_verifier: verifier || ''
-      });
-      const resp = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString()
-      });
+      const body = new URLSearchParams({ client_id:CLIENT_ID, grant_type:'authorization_code', code, redirect_uri:REDIRECT, code_verifier:verifier||'' });
+      const resp = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body.toString() });
       const data = await resp.json();
       if (data.access_token) {
         odToken = data.access_token;
@@ -449,12 +502,9 @@ async function handleOAuthReturn() {
       } else {
         showErr('OneDrive 登入失敗：' + (data.error_description || JSON.stringify(data)));
       }
-    } catch (e) {
-      showErr('OneDrive 登入失敗：' + e.message);
-    }
+    } catch (e) { showErr('OneDrive 登入失敗：' + e.message); }
     return;
   }
-  // Legacy: handle #access_token fragment (fallback)
   if (location.hash.includes('access_token')) {
     const p = new URLSearchParams(location.hash.slice(1));
     odToken = p.get('access_token');
@@ -479,6 +529,9 @@ $('flipBtn').onclick    = async () => {
 };
 
 async function startCam() {
+  // 如果目前有待編輯的發票，先存入清單再開始新掃描
+  commitPending();
+
   try {
     if (stream) stopCam();
     stream = await navigator.mediaDevices.getUserMedia({
@@ -495,7 +548,7 @@ async function startCam() {
     $('scanLine').classList.add('active');
     $('halfLine').classList.add('active');
 
-    // [OPTIONAL ZOOM] 縮放初始化開始
+    // [OPTIONAL ZOOM]
     zoomTrack = stream.getVideoTracks()[0];
     const caps = zoomTrack.getCapabilities?.() || {};
     const zs = $('zoomSlider');
@@ -510,11 +563,8 @@ async function startCam() {
       };
       zs.parentElement.style.display = 'flex';
     } else {
-      // 裝置不支援 zoom API，隱藏滑桿
       zs.parentElement.style.display = 'none';
     }
-    // [OPTIONAL ZOOM] 縮放初始化結束
-
   } catch (e) {
     showErr('無法開啟相機，請確認瀏覽器已允許相機權限。\n詳細錯誤：' + e.message);
   }
@@ -522,7 +572,7 @@ async function startCam() {
 
 function stopCam() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  zoomTrack = null; // [OPTIONAL ZOOM]
+  zoomTrack = null;
   video.classList.remove('visible');
   $('shutterBar').classList.remove('visible');
   $('actionRow').style.display = 'flex';
@@ -534,42 +584,25 @@ function stopCam() {
 }
 
 function capture() {
-  // 取得 camera-zone 容器的顯示尺寸（螢幕上實際可見的像素範圍）
   const zone    = $('cameraZone');
   const dispW   = zone.clientWidth;
   const dispH   = zone.clientHeight;
   const vidW    = video.videoWidth;
   const vidH    = video.videoHeight;
-
-  // video 使用 object-fit:cover，計算實際顯示比例與裁切偏移
   const dispRatio = dispW / dispH;
   const vidRatio  = vidW  / vidH;
-
   let srcX, srcY, srcW, srcH;
   if (vidRatio > dispRatio) {
-    // 影片比容器「更寬」→ 左右被裁切
-    srcH = vidH;
-    srcW = vidH * dispRatio;
-    srcX = (vidW - srcW) / 2;
-    srcY = 0;
+    srcH = vidH; srcW = vidH * dispRatio;
+    srcX = (vidW - srcW) / 2; srcY = 0;
   } else {
-    // 影片比容器「更高」→ 上下被裁切
-    srcW = vidW;
-    srcH = vidW / dispRatio;
-    srcX = 0;
-    srcY = (vidH - srcH) / 2;
+    srcW = vidW; srcH = vidW / dispRatio;
+    srcX = 0; srcY = (vidH - srcH) / 2;
   }
-
-  // 輸出解析度：以 2× 螢幕密度為基準，保留足夠 OCR 品質
   const scale  = Math.min(window.devicePixelRatio || 2, 3);
-  canvas.width  = Math.round(dispW  * scale);
-  canvas.height = Math.round(dispH  * scale);
-  canvas.getContext('2d').drawImage(
-    video,
-    srcX, srcY, srcW, srcH,         // 來源：sensor 上的可見區域
-    0, 0, canvas.width, canvas.height // 目標：canvas 全幅
-  );
-
+  canvas.width  = Math.round(dispW * scale);
+  canvas.height = Math.round(dispH * scale);
+  canvas.getContext('2d').drawImage(video, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height);
   const url = canvas.toDataURL('image/jpeg', 0.92);
   preview.src = url;
   preview.classList.add('visible');
@@ -581,6 +614,8 @@ function capture() {
 // 檔案上傳
 // ═══════════════════════════════════════════════════
 $('fileInput').onchange = async function () {
+  // 如果目前有待編輯的發票，先存入清單
+  commitPending();
   for (const f of this.files) {
     const url = await new Promise(r => {
       const fr = new FileReader();
@@ -603,10 +638,9 @@ async function processImg(dataURL) {
   closeErr();
   $('statusBox').classList.add('visible');
   $('statusText').textContent = '上傳至 Azure OCR (Read 模型)...';
+  $('nextScanNotice').classList.remove('visible');
   try {
     const blob = await fetch(dataURL).then(r => r.blob());
-
-    // 優先嘗試 v4.0 Read，失敗再嘗試 v3.1
     let sub = await fetch(
       `${azEp}/documentintelligence/documentModels/prebuilt-read:analyze?api-version=2024-11-30`,
       { method:'POST', headers:{'Ocp-Apim-Subscription-Key':azKey,'Content-Type':blob.type||'image/jpeg'}, body:blob }
@@ -620,31 +654,25 @@ async function processImg(dataURL) {
     }
     if (!sub.ok) {
       const errText = await sub.text();
-      throw new Error(
-        `Azure 回傳錯誤 ${sub.status}：\n${errText}\n\n請確認：\n` +
-        `1. 端點 URL 正確（不含尾斜線）\n2. API 金鑰已重新產生\n3. Azure 資源狀態正常`
-      );
+      throw new Error(`Azure 回傳錯誤 ${sub.status}：\n${errText}\n\n請確認：\n1. 端點 URL 正確（不含尾斜線）\n2. API 金鑰已重新產生\n3. Azure 資源狀態正常`);
     }
-
     const opUrl = sub.headers.get('Operation-Location');
     if (!opUrl) throw new Error('Azure 未回傳 Operation-Location，請確認資源設定正確');
-
     const result = await poll(opUrl);
     const parsed = parseReadResult(result);
     parsed.imageURL = dataURL;
     parsed.id       = ++cardCnt;
+    parsed.edited   = false;
 
-    // ── 台灣角川買受人驗證 ──
     if (!parsed.hasBuyerTaxId) {
       toast('⚠ 買受人非台灣角川');
-      // 以非阻斷方式提示（也可改 alert，視需求）
       setTimeout(() => showErr('⚠ 買受人非台灣角川（未偵測到統編 16841747），請確認此發票是否正確。'), 100);
     }
 
-    invoices.push(parsed);
-    renderCard(parsed);
-    updateCount();
-    if (parsed.hasBuyerTaxId) toast('辨識完成');
+    // 顯示待編輯區（不立即放入清單）
+    pendingInvoice = parsed;
+    renderPendingCard(parsed);
+    if (parsed.hasBuyerTaxId) toast('辨識完成，可在下方編輯後掃描下一張');
   } catch (e) {
     console.error(e);
     showErr(e.message || '發生未知錯誤，請查看瀏覽器 Console');
@@ -667,13 +695,197 @@ async function poll(url, tries = 25) {
 }
 
 // ═══════════════════════════════════════════════════
+// 待編輯卡片（掃描分頁）
+// ═══════════════════════════════════════════════════
+function renderPendingCard(inv) {
+  const area = $('pendingArea');
+  area.innerHTML = '';
+  $('nextScanNotice').classList.remove('visible');
+
+  const cc = inv.confidence >= 70 ? 'ch' : inv.confidence >= 40 ? 'cm' : 'cl';
+  const cl = inv.confidence >= 70 ? '高' : inv.confidence >= 40 ? '中' : '低';
+
+  const buyerPill = inv.hasBuyerTaxId
+    ? `<span class="pill ok">買受人 ✓</span>`
+    : `<span class="pill bad">買受人 ✗</span>`;
+  const taxPill = inv.vendorTaxId
+    ? `<span class="pill ${inv.taxIdValid ? 'ok' : 'bad'}">廠商 ${inv.vendorTaxId} ${inv.taxIdValid ? '✓' : '✗'}</span>`
+    : '';
+
+  const card = document.createElement('div');
+  card.className = 'pending-card';
+  card.id = 'pendingCard';
+  card.innerHTML = `
+    <div class="pending-header">
+      <div>
+        <div class="pending-title">辨識完成 — 可編輯後掃描下一張</div>
+        <div class="pending-hint">執行下一筆掃描時將自動存入清單</div>
+      </div>
+      <span class="conf ${cc}">信心 ${cl}</span>
+    </div>
+    <div class="pending-invoice-no" id="pendingInvoiceNo">${inv.invoiceNo || '（號碼未辨識）'}</div>
+    <div class="pending-meta">
+      ${inv.invoiceDate ? `<span class="pill">${inv.invoiceDate}</span>` : ''}
+      ${inv.company     ? `<span class="pill">${inv.company}</span>` : ''}
+      ${buyerPill}${taxPill}
+      ${inv.amount   ? `<span class="pill">未稅 ${Number(inv.amount).toLocaleString()}</span>` : ''}
+      ${inv.tax      ? `<span class="pill">稅 ${Number(inv.tax).toLocaleString()}</span>` : ''}
+      ${inv.totalAmt ? `<span class="pill hi">含稅 ${Number(inv.totalAmt).toLocaleString()}</span>` : ''}
+    </div>
+    <div class="pending-fields">
+      <div class="field-row"><label class="field-label">發票號碼</label>
+        <input class="field-input" id="pf_invoiceNo" value="${inv.invoiceNo||''}" placeholder="AB-12345678" oninput="syncPending('invoiceNo',this.value)"></div>
+      <div class="field-row"><label class="field-label">發票日期</label>
+        <input class="field-input" id="pf_invoiceDate" value="${inv.invoiceDate||''}" placeholder="2025/01/15" oninput="syncPending('invoiceDate',this.value)"></div>
+      <div class="field-row"><label class="field-label">廠商名稱</label>
+        <input class="field-input" id="pf_company" value="${inv.company||''}" placeholder="廠商公司名稱" oninput="syncPending('company',this.value)"></div>
+      <div class="field-row"><label class="field-label">買受人統一編號（台灣角川）</label>
+        <input class="field-input" value="${inv.buyerTaxId||KADOKAWA_ID}" readonly style="color:var(--muted)"></div>
+      <div class="field-row"><label class="field-label">廠商統一編號</label>
+        <input class="field-input" id="pf_vendorTaxId" value="${inv.vendorTaxId||''}" placeholder="12345678" oninput="syncPending('vendorTaxId',this.value)"></div>
+      <div class="field-row"><label class="field-label">未稅金額</label>
+        <input class="field-input" id="pf_amount" value="${inv.amount||''}" placeholder="10000" oninput="syncPendingAmt('amount',this)"></div>
+      <div class="field-row"><label class="field-label">稅額（5%）</label>
+        <input class="field-input" id="pf_tax" value="${inv.tax||''}" placeholder="500" oninput="syncPendingAmt('tax',this)"></div>
+      <div class="field-row"><label class="field-label">含稅合計</label>
+        <input class="field-input" id="pf_totalAmt" value="${inv.totalAmt||''}" placeholder="10500" oninput="syncPendingAmt('totalAmt',this)"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="exp-btn" onclick="togglePendingRaw()">辨識原文</button>
+      <button class="btn btn-primary" style="flex:1;padding:10px" onclick="commitAndNext()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        存入清單
+      </button>
+    </div>
+    <div class="pending-raw" id="pendingRaw">${(inv.rawText||'（無原文）').replace(/</g,'&lt;')}</div>`;
+
+  area.appendChild(card);
+}
+
+function syncPendingAmt(field, input) {
+  if (!pendingInvoice) return;
+  const raw = parseInt(input.value.replace(/[,，\s]/g, ''));
+  const v   = isNaN(raw) ? '' : String(raw);
+  pendingInvoice[field] = v;
+  pendingInvoice.edited = true;
+
+  const amtEl   = $('pf_amount');
+  const taxEl   = $('pf_tax');
+  const totalEl = $('pf_totalAmt');
+  if (!amtEl || !taxEl || !totalEl) return;
+
+  const get = id => { const n = parseInt($(id).value.replace(/[,，\s]/g,'')); return isNaN(n) ? null : n; };
+  let amt   = field==='amount'   ? (isNaN(raw)?null:raw) : get('pf_amount');
+  let tax   = field==='tax'      ? (isNaN(raw)?null:raw) : get('pf_tax');
+  let total = field==='totalAmt' ? (isNaN(raw)?null:raw) : get('pf_totalAmt');
+
+  if (field === 'amount' && amt !== null) {
+    tax   = Math.round(amt * 0.05);
+    total = amt + tax;
+    taxEl.value   = tax;
+    totalEl.value = total;
+    pendingInvoice.tax      = String(tax);
+    pendingInvoice.totalAmt = String(total);
+  } else if (field === 'totalAmt' && total !== null) {
+    tax = Math.round(total * 5 / 105);
+    amt = total - tax;
+    amtEl.value = amt;
+    taxEl.value = tax;
+    pendingInvoice.amount = String(amt);
+    pendingInvoice.tax    = String(tax);
+  } else if (field === 'tax' && tax !== null) {
+    if (amt !== null) {
+      total = amt + tax;
+      totalEl.value = total;
+      pendingInvoice.totalAmt = String(total);
+    } else if (total !== null) {
+      amt = total - tax;
+      amtEl.value = amt;
+      pendingInvoice.amount = String(amt);
+    }
+  }
+}
+
+function togglePendingRaw() {
+  const r = $('pendingRaw');
+  if (r) r.classList.toggle('open');
+}
+
+// 金額欄位輸入 → 自動換算其他兩欄（5% 稅率）
+function syncPendingAmt(field, input) {
+  if (!pendingInvoice) return;
+  const raw = parseInt(input.value.replace(/[,，\s]/g, ''));
+  const v   = isNaN(raw) ? '' : String(raw);
+  pendingInvoice[field] = v;
+  pendingInvoice.edited = true;
+
+  const amtEl   = $('pf_amount');
+  const taxEl   = $('pf_tax');
+  const totalEl = $('pf_totalAmt');
+  if (!amtEl || !taxEl || !totalEl) return;
+
+  // 讀目前三欄數值（以剛輸入的為準）
+  const get = id => { const n = parseInt($(id).value.replace(/[,，\s]/g,'')); return isNaN(n) ? null : n; };
+  let amt   = field==='amount'   ? (isNaN(raw)?null:raw) : get('pf_amount');
+  let tax   = field==='tax'      ? (isNaN(raw)?null:raw) : get('pf_tax');
+  let total = field==='totalAmt' ? (isNaN(raw)?null:raw) : get('pf_totalAmt');
+
+  // 換算邏輯（只在使用者沒有主動填寫的欄位自動帶入）
+  if (field === 'amount' && amt !== null) {
+    // 輸入未稅 → 算稅額 & 含稅
+    tax   = Math.round(amt * 0.05);
+    total = amt + tax;
+    taxEl.value   = tax;
+    totalEl.value = total;
+    pendingInvoice.tax      = String(tax);
+    pendingInvoice.totalAmt = String(total);
+  } else if (field === 'totalAmt' && total !== null) {
+    // 輸入含稅 → 反推未稅 & 稅額
+    tax = Math.round(total * 5 / 105);
+    amt = total - tax;
+    amtEl.value = amt;
+    taxEl.value = tax;
+    pendingInvoice.amount = String(amt);
+    pendingInvoice.tax    = String(tax);
+  } else if (field === 'tax' && tax !== null) {
+    // 輸入稅額 → 若有未稅則算含稅；若有含稅則算未稅
+    if (amt !== null) {
+      total = amt + tax;
+      totalEl.value = total;
+      pendingInvoice.totalAmt = String(total);
+    } else if (total !== null) {
+      amt = total - tax;
+      amtEl.value = amt;
+      pendingInvoice.amount = String(amt);
+    }
+  }
+}
+
+// 手動按「存入清單」按鈕
+function commitAndNext() {
+  if (!pendingInvoice) return;
+  commitPending();
+  $('nextScanNotice').classList.add('visible');
+  $('pendingArea').innerHTML = '';
+}
+
+// 掃描新一張時自動 commit 上一筆
+function commitPending() {
+  if (!pendingInvoice) return;
+  invoices.push(pendingInvoice);
+  renderCard(pendingInvoice);
+  updateCount();
+  pendingInvoice = null;
+  $('pendingArea').innerHTML = '';
+  $('nextScanNotice').classList.remove('visible');
+}
+
+// ═══════════════════════════════════════════════════
 // 解析 Read 模型結果
 // ═══════════════════════════════════════════════════
 function parseReadResult(data) {
   const pages    = data.analyzeResult?.pages || [];
-  const pageH    = pages[0]?.height || 1000; // 頁面總高度（座標單位）
-
-  // 收集所有行，記錄 Y 座標（取上下邊緣平均）
+  const pageH    = pages[0]?.height || 1000;
   const allLines = pages.flatMap(page =>
     (page.lines || []).map(line => ({
       text: line.content,
@@ -681,20 +893,16 @@ function parseReadResult(data) {
       x:   line.polygon ? line.polygon[0] : 0,
     }))
   );
-
   const fullText = allLines.map(l => l.text).join('\n');
 
-  // ── 發票號碼（全頁搜尋） ──────────────────────────
   const fL = s => s.toUpperCase().replace(/0/g,'O').replace(/1/g,'I').replace(/8/g,'B');
-  const fD = s => s.replace(/O/gi,'0').replace(/I/g,'1').replace(/l/g,'1')
-                   .replace(/B/g,'8').replace(/S/g,'5').replace(/\s/g,'');
+  const fD = s => s.replace(/O/gi,'0').replace(/I/g,'1').replace(/l/g,'1').replace(/B/g,'8').replace(/S/g,'5').replace(/\s/g,'');
 
   let invoiceNo = '';
   for (const src of [...allLines.map(l=>l.text), fullText.replace(/\s+/g,' ')]) {
     const m = src.match(/([A-Za-z]{2})[\s\-]?(\d{8})/);
     if (m) { invoiceNo = fL(m[1]) + '-' + fD(m[2]); break; }
   }
-  // 跨行配對（兩個字母 + 附近八位數字）
   if (!invoiceNo) {
     for (let i = 0; i < allLines.length; i++) {
       const lm = allLines[i].text.match(/^\s*([A-Za-z]{2})\s*$/);
@@ -711,7 +919,6 @@ function parseReadResult(data) {
   invoiceNo = invoiceNo.replace(/\s/g,'').toUpperCase();
   if (/^[A-Z]{2}\d{8}$/.test(invoiceNo)) invoiceNo = invoiceNo.slice(0,2) + '-' + invoiceNo.slice(2);
 
-  // ── 發票日期（全頁搜尋） ──────────────────────────
   let invoiceDate = '';
   for (const src of [...allLines.map(l=>l.text), fullText]) {
     const m = src.match(/(\d{2,3})\s*[\/\-年]\s*(\d{1,2})\s*[\/\-月]\s*(\d{1,2})/);
@@ -719,110 +926,60 @@ function parseReadResult(data) {
       let y = parseInt(m[1]);
       if (y < 200) y += 1911;
       if (y >= 2000 && y <= 2099) {
-        invoiceDate = `${y}/${m[2].padStart(2,'0')}/${m[3].padStart(2,'0')}`;
-        break;
+        invoiceDate = `${y}/${m[2].padStart(2,'0')}/${m[3].padStart(2,'0')}`; break;
       }
     }
   }
 
-  // ── 廠商名稱（全頁搜尋） ──────────────────────────
   let company = '';
   const cr = /([\u4e00-\u9fff]{2,12}(?:股份有限公司|有限公司|企業有限公司|實業有限公司|企業股份|工業股份|科技股份|企業|工業|科技|實業|商行|行號|工廠))/;
-  for (const l of allLines) {
-    const m = l.text.match(cr);
-    if (m) { company = m[1]; break; }
-  }
+  for (const l of allLines) { const m = l.text.match(cr); if (m) { company = m[1]; break; } }
 
-  // ── 廠商統一編號（優先找含關鍵字的行） ───────────────
-  // 統編格式：8位數字，且通過台灣統編驗算公式
-  let vendorTaxId = '';
-  let taxIdValid  = null; // true/false/null(未找到)
-
-  // 關鍵字模式：前方有「統一編號」「統編」「賣方」「No.」等字樣的行
+  let vendorTaxId = '', taxIdValid = null;
   const taxIdKeyRe = /統一編號|統\s*編|賣\s*方|seller|No\.|no\.|編號/i;
-
-  // 先在含關鍵字的行中尋找
   const keywordLines = allLines.filter(l => taxIdKeyRe.test(l.text));
   for (const l of keywordLines) {
     const candidates = [...l.text.matchAll(/\b(\d{8})\b/g)].map(m => m[1]);
-    for (const cand of candidates) {
-      if (validateTaxId(cand)) { vendorTaxId = cand; taxIdValid = true; break; }
-    }
+    for (const cand of candidates) { if (validateTaxId(cand)) { vendorTaxId = cand; taxIdValid = true; break; } }
     if (vendorTaxId) break;
-    // 關鍵字在同行但數字在下一行的情況
     const lineIdx = allLines.indexOf(l);
     if (lineIdx >= 0 && lineIdx + 1 < allLines.length) {
       const nextCands = [...allLines[lineIdx+1].text.matchAll(/\b(\d{8})\b/g)].map(m => m[1]);
-      for (const cand of nextCands) {
-        if (validateTaxId(cand)) { vendorTaxId = cand; taxIdValid = true; break; }
-      }
+      for (const cand of nextCands) { if (validateTaxId(cand)) { vendorTaxId = cand; taxIdValid = true; break; } }
       if (vendorTaxId) break;
     }
   }
-
-  // 若關鍵字行找不到，再全行掃描（但不含已知為發票號碼後8碼）
   if (!vendorTaxId) {
     for (const l of allLines) {
       const candidates = [...l.text.matchAll(/\b(\d{8})\b/g)].map(m => m[1]);
-      for (const cand of candidates) {
-        if (validateTaxId(cand)) {
-          vendorTaxId = cand;
-          taxIdValid  = true;
-          break;
-        }
-      }
+      for (const cand of candidates) { if (validateTaxId(cand)) { vendorTaxId = cand; taxIdValid = true; break; } }
       if (vendorTaxId) break;
     }
   }
-  // 若嚴格驗算無結果，退而求其次抓含關鍵字行的第一個8位數（不驗算）
   if (!vendorTaxId) {
-    for (const l of keywordLines) {
-      const m = l.text.match(/\b(\d{8})\b/);
-      if (m) { vendorTaxId = m[1]; taxIdValid = validateTaxId(m[1]); break; }
-    }
+    for (const l of keywordLines) { const m = l.text.match(/\b(\d{8})\b/); if (m) { vendorTaxId = m[1]; taxIdValid = validateTaxId(m[1]); break; } }
   }
-  // 最後 fallback：全文第一個8位數
-  if (!vendorTaxId) {
-    const m = fullText.match(/\b(\d{8})\b/);
-    if (m) { vendorTaxId = m[1]; taxIdValid = validateTaxId(m[1]); }
-  }
+  if (!vendorTaxId) { const m = fullText.match(/\b(\d{8})\b/); if (m) { vendorTaxId = m[1]; taxIdValid = validateTaxId(m[1]); } }
 
-  // ── 金額（限定下半部，避免抓到統編/電話） ───────────
-  // 關鍵：只取 Y > pageH * 0.45 的行（頁面下半部）
   const bottomLines = allLines.filter(l => l.y > pageH * 0.45);
   let amount = '', tax = '', totalAmt = '';
-
-  // 在下半部行中，找含有金額關鍵字的行附近
   const amtKeyRe = /銷售額|未稅|小計|合計|稅額|總計|應收|應付|含稅/;
-
-  // 把下半部行按 Y 分組（±12px 同列）
-  const usedIdx  = new Set();
+  const usedIdx = new Set();
   const clusters = [];
   for (let i = 0; i < bottomLines.length; i++) {
     if (usedIdx.has(i)) continue;
-    const cluster = [bottomLines[i]];
-    usedIdx.add(i);
+    const cluster = [bottomLines[i]]; usedIdx.add(i);
     for (let j = i+1; j < bottomLines.length; j++) {
-      if (!usedIdx.has(j) && Math.abs(bottomLines[j].y - bottomLines[i].y) <= 12) {
-        cluster.push(bottomLines[j]);
-        usedIdx.add(j);
-      }
+      if (!usedIdx.has(j) && Math.abs(bottomLines[j].y - bottomLines[i].y) <= 12) { cluster.push(bottomLines[j]); usedIdx.add(j); }
     }
     clusters.push(cluster);
   }
-
-  // 找最佳群組：含金額關鍵字且有 2+ 個數字的列
   let bestCluster = null;
   for (const cluster of clusters) {
     const clText = cluster.map(l => l.text).join(' ');
     const nums   = extractNums(clText);
-    if (nums.length >= 2 && (amtKeyRe.test(clText) || nums.length >= 3)) {
-      bestCluster = cluster;
-      break;
-    }
+    if (nums.length >= 2 && (amtKeyRe.test(clText) || nums.length >= 3)) { bestCluster = cluster; break; }
   }
-
-  // 退而求其次：三個連續純數字行
   if (!bestCluster) {
     for (let i = 0; i < bottomLines.length - 1; i++) {
       const n0 = /^[\s\d,，]+$/.test(bottomLines[i].text);
@@ -834,85 +991,47 @@ function parseReadResult(data) {
       }
     }
   }
-
   if (bestCluster) {
-    // 依 X 排序（左→右：未稅、稅額、含稅）
     const sorted = [...bestCluster].sort((a,b) => a.x - b.x);
     const nums   = extractNums(sorted.map(l=>l.text).join(' ')).sort((a,b)=>a-b);
-
     if (nums.length >= 3) {
-      // 3 個數字：最小=未稅、中=稅額、最大=含稅
-      amount   = String(nums[nums.length-3]);
-      tax      = String(nums[nums.length-2]);
-      totalAmt = String(nums[nums.length-1]);
-      // 合理性驗算：未稅+稅 ≈ 含稅（容差 5%）
+      amount = String(nums[nums.length-3]); tax = String(nums[nums.length-2]); totalAmt = String(nums[nums.length-1]);
       const calc = parseInt(amount) + parseInt(tax);
       if (Math.abs(calc - parseInt(totalAmt)) / parseInt(totalAmt) > 0.05) {
-        // 驗算失敗，改由含稅反推
-        tax    = String(Math.round(parseInt(totalAmt) * 5 / 105));
-        amount = String(parseInt(totalAmt) - parseInt(tax));
+        tax = String(Math.round(parseInt(totalAmt) * 5 / 105)); amount = String(parseInt(totalAmt) - parseInt(tax));
       }
     } else if (nums.length === 2) {
       const [s, l] = nums;
-      // 若小數約為大數的 4-6%，視為稅額
-      if (s / l > 0.03 && s / l < 0.07) {
-        tax = String(s); totalAmt = String(l); amount = String(l - s);
-      } else {
-        amount = String(s); totalAmt = String(l);
-        tax    = String(Math.round(l * 5 / 105));
-      }
+      if (s / l > 0.03 && s / l < 0.07) { tax = String(s); totalAmt = String(l); amount = String(l - s); }
+      else { amount = String(s); totalAmt = String(l); tax = String(Math.round(l * 5 / 105)); }
     } else if (nums.length === 1) {
-      totalAmt = String(nums[0]);
-      tax      = String(Math.round(nums[0] * 5 / 105));
-      amount   = String(nums[0] - parseInt(tax));
+      totalAmt = String(nums[0]); tax = String(Math.round(nums[0] * 5 / 105)); amount = String(nums[0] - parseInt(tax));
     }
   }
-
-  // 關鍵字 Fallback（仍限下半部）
   const btText = bottomLines.map(l=>l.text).join('\n');
   if (!amount)   { const m=btText.match(/(?:未稅|銷售額|小計)\s*[:：]?\s*([\d,，]+)/);   if(m) amount=m[1].replace(/[,，]/g,''); }
   if (!tax)      { const m=btText.match(/(?:稅額|營業稅)\s*[:：]?\s*([\d,，]+)/);        if(m) tax=m[1].replace(/[,，]/g,''); }
   if (!totalAmt) { const m=btText.match(/(?:合計|總計|含稅合計|應收|應付)\s*[:：]?\s*([\d,，]+)/); if(m) totalAmt=m[1].replace(/[,，]/g,''); }
-
-  // 互推缺少的欄位
   if (amount && tax && !totalAmt) totalAmt = String(parseInt(amount)+parseInt(tax));
   if (totalAmt && tax && !amount) amount   = String(parseInt(totalAmt)-parseInt(tax));
   if (totalAmt && amount && !tax) tax      = String(parseInt(totalAmt)-parseInt(amount));
   if (totalAmt && !tax)           tax      = String(Math.round(parseInt(totalAmt)*5/105));
 
-  // ── 買受人 vs 廠商統編區分 ───────────────────────────
-  // 發票上通常有兩組統編：買受人（台灣角川 16841747）和賣方（廠商）
-  // 先從全文找出所有通過驗算的8位數統編候選
   const allTaxCandidates = [];
   for (const l of allLines) {
     for (const m of l.text.matchAll(/\b(\d{8})\b/g)) {
-      if (validateTaxId(m[1]) && !allTaxCandidates.includes(m[1])) {
-        allTaxCandidates.push(m[1]);
-      }
+      if (validateTaxId(m[1]) && !allTaxCandidates.includes(m[1])) allTaxCandidates.push(m[1]);
     }
   }
-
-  // 判斷是否有買受人統編 16841747
-  const hasBuyerTaxId = allTaxCandidates.includes(KADOKAWA_ID) ||
-    fullText.includes(KADOKAWA_ID);
-
-  let buyerTaxId  = '';
-  // 若找到台灣角川統編，則賣方統編 = 排除 16841747 後的第一個合法統編
+  const hasBuyerTaxId = allTaxCandidates.includes(KADOKAWA_ID) || fullText.includes(KADOKAWA_ID);
+  let buyerTaxId = '';
   if (hasBuyerTaxId) {
     buyerTaxId = KADOKAWA_ID;
     const sellerCand = allTaxCandidates.filter(c => c !== KADOKAWA_ID);
-    if (sellerCand.length > 0) {
-      vendorTaxId = sellerCand[0];
-      taxIdValid  = true;
-    }
-    // 若 vendorTaxId 本身就是 16841747（誤抓買受人），也清掉
-    if (vendorTaxId === KADOKAWA_ID) {
-      vendorTaxId = sellerCand.length > 0 ? sellerCand[0] : '';
-      taxIdValid  = vendorTaxId ? true : null;
-    }
+    if (sellerCand.length > 0) { vendorTaxId = sellerCand[0]; taxIdValid = true; }
+    if (vendorTaxId === KADOKAWA_ID) { vendorTaxId = sellerCand.length > 0 ? sellerCand[0] : ''; taxIdValid = vendorTaxId ? true : null; }
   }
 
-  // ── 信心分數 ──────────────────────────────────────
   let score = 0;
   if (/^[A-Z]{2}-\d{8}$/.test(invoiceNo)) score += 50; else if (invoiceNo) score += 20;
   if (invoiceDate) score += 20;
@@ -924,38 +1043,26 @@ function parseReadResult(data) {
   return { invoiceNo, invoiceDate, amount, tax, totalAmt, company, vendorTaxId, taxIdValid, buyerTaxId, hasBuyerTaxId, confidence:score, rawText:fullText };
 }
 
-// 從文字中抓出合理金額數字（100~9,999,999，排除日期數字）
 function extractNums(text) {
   return [...text.matchAll(/[\d,，]+/g)]
     .map(m => parseInt(m[0].replace(/[,，]/g,'')))
     .filter(n => n >= 100 && n <= 9999999);
 }
 
-// ═══════════════════════════════════════════════════
-// 台灣統一編號驗算（加權乘積法）
-// 邏輯：乘以 [1,2,1,2,1,2,4,1]，每個乘積的十位數與個位數相加，
-// 各相加結果加總，能被 10 整除則合法。
-// 特例：第 7 碼為 7 時，乘積 28 的加總可以是 10 或 11。
-// ═══════════════════════════════════════════════════
 function validateTaxId(id) {
   if (!/^\d{8}$/.test(id)) return false;
-  const weights = [1, 2, 1, 2, 1, 2, 4, 1];
+  const weights = [1,2,1,2,1,2,4,1];
   const digits  = id.split('').map(Number);
   let sum = 0;
-  for (let i = 0; i < 8; i++) {
-    const p = digits[i] * weights[i];
-    sum += Math.floor(p / 10) + (p % 10); // 十位數 + 個位數
-  }
-  // 第 7 碼為 7 時，有兩種合法情況
-  if (digits[6] === 7) return sum % 10 === 0 || (sum + 1) % 10 === 0;
-  return sum % 10 === 0;
+  for (let i = 0; i < 8; i++) { const p = digits[i]*weights[i]; sum += Math.floor(p/10)+(p%10); }
+  if (digits[6] === 7) return sum%10===0 || (sum+1)%10===0;
+  return sum%10===0;
 }
 
 // ═══════════════════════════════════════════════════
-// 渲染發票卡片
+// 渲染清單卡片
 // ═══════════════════════════════════════════════════
 function renderCard(inv) {
-  // 修正連續掃描 bug：不依賴 emptyState.parentNode，改用 ID 查詢後安全移除
   const es = $('emptyState');
   if (es) es.remove();
   $('listHeader').style.display = 'flex';
@@ -963,19 +1070,16 @@ function renderCard(inv) {
   const cc = inv.confidence >= 70 ? 'ch' : inv.confidence >= 40 ? 'cm' : 'cl';
   const cl = inv.confidence >= 70 ? '高' : inv.confidence >= 40 ? '中' : '低';
 
-  // 統編驗算標籤
   let taxIdPill = '';
   if (inv.vendorTaxId) {
-    if (inv.taxIdValid) {
-      taxIdPill = `<span class="pill ok" title="廠商統編驗算通過">廠商 ${inv.vendorTaxId} ✓</span>`;
-    } else {
-      taxIdPill = `<span class="pill bad" title="廠商統編驗算未通過，請人工確認">廠商 ${inv.vendorTaxId} ✗</span>`;
-    }
+    taxIdPill = inv.taxIdValid
+      ? `<span class="pill ok" title="廠商統編驗算通過">廠商 ${inv.vendorTaxId} ✓</span>`
+      : `<span class="pill bad" title="廠商統編驗算未通過">廠商 ${inv.vendorTaxId} ✗</span>`;
   }
-  // 買受人標籤
   const buyerPill = inv.hasBuyerTaxId
-    ? `<span class="pill ok" title="買受人台灣角川 ${KADOKAWA_ID}">買受人 ✓</span>`
-    : `<span class="pill bad" title="未偵測到台灣角川統編">買受人 ✗</span>`;
+    ? `<span class="pill ok">買受人 ✓</span>`
+    : `<span class="pill bad">買受人 ✗</span>`;
+  const editedPill = inv.edited ? `<span class="pill edited">已編輯</span>` : '';
 
   const card = document.createElement('div');
   card.className  = 'invoice-card';
@@ -987,8 +1091,7 @@ function renderCard(inv) {
       <div class="card-meta">
         ${inv.invoiceDate ? `<span class="pill">${inv.invoiceDate}</span>` : ''}
         ${inv.company     ? `<span class="pill">${inv.company}</span>` : ''}
-        ${buyerPill}
-        ${taxIdPill}
+        ${buyerPill}${taxIdPill}${editedPill}
       </div>
       <div class="card-meta" style="margin-top:2px">
         ${inv.amount   ? `<span class="pill">未稅 ${Number(inv.amount).toLocaleString()}</span>` : ''}
@@ -1008,14 +1111,14 @@ function renderCard(inv) {
       </div>
       <div id="raw-${inv.id}" style="display:none;margin-top:8px;background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--muted);white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;line-height:1.6">${(inv.rawText||'（無原文）').replace(/</g,'&lt;')}</div>
       <div class="card-fields" id="flds-${inv.id}">
-        <div class="field-row"><label class="field-label">發票號碼</label><input class="field-input" data-f="invoiceNo" data-id="${inv.id}" value="${inv.invoiceNo||''}" placeholder="AB-12345678"></div>
-        <div class="field-row"><label class="field-label">發票日期</label><input class="field-input" data-f="invoiceDate" data-id="${inv.id}" value="${inv.invoiceDate||''}" placeholder="2025/01/15"></div>
-        <div class="field-row"><label class="field-label">廠商名稱</label><input class="field-input" data-f="company" data-id="${inv.id}" value="${inv.company||''}" placeholder="廠商公司名稱"></div>
-        <div class="field-row"><label class="field-label">買受人統一編號（台灣角川）</label><input class="field-input" data-f="buyerTaxId" data-id="${inv.id}" value="${inv.buyerTaxId||KADOKAWA_ID}" placeholder="16841747" readonly style="color:var(--muted)"></div>
-        <div class="field-row"><label class="field-label">廠商統一編號</label><input class="field-input" data-f="vendorTaxId" data-id="${inv.id}" value="${inv.vendorTaxId||''}" placeholder="12345678" oninput="recheckTaxId(this,${inv.id})"></div>
-        <div class="field-row"><label class="field-label">未稅金額</label><input class="field-input" data-f="amount" data-id="${inv.id}" value="${inv.amount||''}" placeholder="10000"></div>
-        <div class="field-row"><label class="field-label">稅額（5%）</label><input class="field-input" data-f="tax" data-id="${inv.id}" value="${inv.tax||''}" placeholder="500"></div>
-        <div class="field-row"><label class="field-label">含稅合計</label><input class="field-input" data-f="totalAmt" data-id="${inv.id}" value="${inv.totalAmt||''}" placeholder="10500"></div>
+        <div class="field-row"><label class="field-label">發票號碼</label><input class="card-field-input" data-f="invoiceNo" data-id="${inv.id}" value="${inv.invoiceNo||''}" placeholder="AB-12345678"></div>
+        <div class="field-row"><label class="field-label">發票日期</label><input class="card-field-input" data-f="invoiceDate" data-id="${inv.id}" value="${inv.invoiceDate||''}" placeholder="2025/01/15"></div>
+        <div class="field-row"><label class="field-label">廠商名稱</label><input class="card-field-input" data-f="company" data-id="${inv.id}" value="${inv.company||''}" placeholder="廠商公司名稱"></div>
+        <div class="field-row"><label class="field-label">買受人統一編號（台灣角川）</label><input class="card-field-input" value="${inv.buyerTaxId||KADOKAWA_ID}" readonly style="color:var(--muted)"></div>
+        <div class="field-row"><label class="field-label">廠商統一編號</label><input class="card-field-input" data-f="vendorTaxId" data-id="${inv.id}" value="${inv.vendorTaxId||''}" placeholder="12345678" oninput="recheckTaxId(this,${inv.id})"></div>
+        <div class="field-row"><label class="field-label">未稅金額</label><input class="card-field-input" data-f="amount" data-id="${inv.id}" value="${inv.amount||''}" placeholder="10000"></div>
+        <div class="field-row"><label class="field-label">稅額（5%）</label><input class="card-field-input" data-f="tax" data-id="${inv.id}" value="${inv.tax||''}" placeholder="500"></div>
+        <div class="field-row"><label class="field-label">含稅合計</label><input class="card-field-input" data-f="totalAmt" data-id="${inv.id}" value="${inv.totalAmt||''}" placeholder="10500"></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
@@ -1023,25 +1126,60 @@ function renderCard(inv) {
       <button class="del-btn" onclick="delCard(${inv.id})">✕</button>
     </div>`;
 
-  // 欄位編輯監聽
-  card.querySelectorAll('.field-input').forEach(inp => {
-    inp.addEventListener('change', () => {
-      const i = invoices.find(x => x.id === parseInt(inp.dataset.id));
-      if (i) i[inp.dataset.f] = inp.value;
+    card.querySelectorAll('.card-field-input').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const i = invoices.find(x => x.id === parseInt(inp.dataset.id));
+        if (!i) return;
+        i[inp.dataset.f] = inp.value;
+        i.edited = true;
+        const f = inp.dataset.f;
+        if (f === 'amount' || f === 'tax' || f === 'totalAmt') {
+          calcAmtFields(i, f, card);
+        }
+      });
     });
-  });
-
   $('invoiceList').appendChild(card);
 }
 
-// 手動修改統編後重新驗算並更新標籤
+function calcAmtFields(inv, field, card) {
+  const getInp = f => card.querySelector(`.card-field-input[data-f="${f}"]`);
+  const amtEl   = getInp('amount');
+  const taxEl   = getInp('tax');
+  const totalEl = getInp('totalAmt');
+  if (!amtEl || !taxEl || !totalEl) return;
+
+  const parse = el => { const n = parseInt(el.value.replace(/[,，\s]/g,'')); return isNaN(n) ? null : n; };
+  let amt   = parse(amtEl);
+  let tax   = parse(taxEl);
+  let total = parse(totalEl);
+
+  if (field === 'amount' && amt !== null) {
+    tax   = Math.round(amt * 0.05);
+    total = amt + tax;
+    taxEl.value   = tax;   inv.tax      = String(tax);
+    totalEl.value = total; inv.totalAmt = String(total);
+  } else if (field === 'totalAmt' && total !== null) {
+    tax = Math.round(total * 5 / 105);
+    amt = total - tax;
+    amtEl.value = amt; inv.amount = String(amt);
+    taxEl.value = tax; inv.tax    = String(tax);
+  } else if (field === 'tax' && tax !== null) {
+    if (amt !== null) {
+      total = amt + tax;
+      totalEl.value = total; inv.totalAmt = String(total);
+    } else if (total !== null) {
+      amt = total - tax;
+      amtEl.value = amt; inv.amount = String(amt);
+    }
+  }
+}
+
 function recheckTaxId(input, id) {
   const val = input.value.trim();
   const inv = invoices.find(i => i.id === id);
   if (!inv) return;
   inv.vendorTaxId = val;
   inv.taxIdValid  = val.length === 8 ? validateTaxId(val) : null;
-  // 找並更新卡片上的統編 pill
   const card = document.querySelector(`[data-id="${id}"]`);
   if (!card) return;
   const oldPill = card.querySelector('.pill.ok, .pill.bad');
@@ -1050,7 +1188,7 @@ function recheckTaxId(input, id) {
     const pill = document.createElement('span');
     pill.className = `pill ${inv.taxIdValid ? 'ok' : 'bad'}`;
     pill.title = inv.taxIdValid ? '統編驗算通過' : '統編驗算未通過，請人工確認';
-    pill.textContent = `統編 ${val} ${inv.taxIdValid ? '✓' : '✗'}`;
+    pill.textContent = `廠商 ${val} ${inv.taxIdValid ? '✓' : '✗'}`;
     card.querySelector('.card-meta').appendChild(pill);
   }
 }
@@ -1073,12 +1211,16 @@ function delCard(id) {
     $('invoiceList').appendChild(getOrCreateEmptyState());
   }
 }
-function updateCount() { $('countDisplay').textContent = invoices.length; }
+function updateCount() {
+  $('countDisplay').textContent = invoices.length;
+  $('listBadge').textContent    = invoices.length;
+}
 
 // ═══════════════════════════════════════════════════
 // 清除
 // ═══════════════════════════════════════════════════
 function clearAll() {
+  if (invoices.length && !confirm(`確定要清除全部 ${invoices.length} 張發票？`)) return;
   invoices = []; cardCnt = 0;
   $('invoiceList').innerHTML = '';
   $('invoiceList').appendChild(getOrCreateEmptyState());
@@ -1086,6 +1228,9 @@ function clearAll() {
   preview.src = '';
   preview.classList.remove('visible');
   $('placeholder').style.display = 'flex';
+  pendingInvoice = null;
+  $('pendingArea').innerHTML = '';
+  $('nextScanNotice').classList.remove('visible');
   updateCount();
   closeErr();
 }
@@ -1161,13 +1306,13 @@ function buildExcelBlob() {
     '稅額':         inv.tax      ? parseInt(inv.tax)      : '',
     '含稅合計':     inv.totalAmt ? parseInt(inv.totalAmt) : (inv.amount && inv.tax ? parseInt(inv.amount)+parseInt(inv.tax) : ''),
     '信心分數':     inv.confidence,
+    '已編輯':       inv.edited ? '是' : '否',
     '備註':         !inv.hasBuyerTaxId ? '買受人非台灣角川' : inv.confidence < 40 ? '請人工確認' : '',
   }));
   const wb  = XLSX.utils.book_new();
   const ws  = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:24},{wch:12},{wch:12},{wch:8},{wch:12},{wch:10},{wch:12},{wch:10},{wch:16}];
+  ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:24},{wch:12},{wch:12},{wch:8},{wch:12},{wch:10},{wch:12},{wch:10},{wch:8},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws, '發票清單');
-
   const total    = invoices.reduce((s,i) => s+(parseInt(i.amount)||0),    0);
   const totalTax = invoices.reduce((s,i) => s+(parseInt(i.tax)||0),       0);
   const totalAmt = invoices.reduce((s,i) => s+(parseInt(i.totalAmt)||0),  0);
@@ -1178,10 +1323,10 @@ function buildExcelBlob() {
     { '項目':'含稅合計',      '數值': totalAmt || total+totalTax },
     { '項目':'統編驗算未通過','數值': invoices.filter(i=>i.taxIdValid===false).length },
     { '項目':'需人工確認',    '數值': invoices.filter(i=>i.confidence<40).length },
+    { '項目':'已手動編輯',    '數值': invoices.filter(i=>i.edited).length },
   ]);
   ws2['!cols'] = [{wch:16},{wch:14}];
   XLSX.utils.book_append_sheet(wb, ws2, '匯總');
-
   return new Blob(
     [XLSX.write(wb, { bookType:'xlsx', type:'array' })],
     { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
